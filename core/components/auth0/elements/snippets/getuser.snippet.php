@@ -46,9 +46,6 @@ if (!($auth0 instanceof Auth0)) {
     return;
 }
 
-// Init
-$auth0->init();
-
 // Call userinfo
 $userInfo = $auth0->api->getUser();
 
