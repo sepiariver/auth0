@@ -10,6 +10,10 @@
  * &requireVerifiedEmail -  (bool) Require verified_email from ID provider. Default true
  * &unverifiedEmailTpl -    (string) Chunk TPL to render when unverified email. Default '@INLINE ...'
  * &userNotFoundTpl -       (string) Chunk TPL to render when no MODX user found. Default '@INLINE ...'
+ * &alreadyLoggedInTpl -    (string) Chunk TPL to render when MODX user already logged-in. Default '@INLINE ...'
+ * &successfulLoginTpl -    (string) Chunk TPL to render when Auth0 login successful. Default '@INLINE ...'
+ * &logoutParam -           (string) Key of GET param to trigger logout. Default 'logout'
+ * &redirect_uri -          (string) Auth0 redirect URI. Default {current Resource's URI}
  * &debug -                 (bool) Enable debug output. Default false
  *
  * @package Auth0
