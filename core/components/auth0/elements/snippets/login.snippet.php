@@ -5,8 +5,12 @@
  * Login an Auth0 user
  *
  * OPTIONS:
- * &loginResourceId -   (int) ID of Resource to redirect user on successful login. Default 0 (no redirect)
- * &debug -             (bool) Enable debug output. Default false
+ * &loginResourceId -       (int) ID of Resource to redirect user on successful login. Default 0 (no redirect)
+ * &loginContexts -         (string) CSV of context keys, to login user (in addition to current context). Default ''
+ * &requireVerifiedEmail -  (bool) Require verified_email from ID provider. Default true
+ * &unverifiedEmailTpl -    (string) Chunk TPL to render when unverified email. Default '@INLINE ...'
+ * &userNotFoundTpl -       (string) Chunk TPL to render when no MODX user found. Default '@INLINE ...'
+ * &debug -                 (bool) Enable debug output. Default false
  *
  * @package Auth0
  * @author @sepiariver <info@sepiariver.com>
@@ -35,7 +39,7 @@ $unverifiedEmailTpl = $modx->getOption('unverifiedEmailTpl', $scriptProperties, 
 $userNotFoundTpl = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
 $debug = $modx->getOption('debug', $scriptProperties, false);
 
-// Redirect if already logged into current context 
+// Redirect if already logged into current context
 if ($loginResourceId && $modx->user->hasSessionContext($modx->context->key)) {
     $loginResourceId = abs($loginResourceId);
     $modx->sendRedirect($modx->makeUrl($loginResourceId));
