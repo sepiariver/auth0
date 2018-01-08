@@ -62,5 +62,5 @@ if (!$userInfo) {
         if ($debug) return '<pre>' . print_r($userInfo, true) . '</pre>';
         return $default;
     }
-    return $modx->getChunk($tpl, $userInfo);
+    return $auth0->getChunk($tpl, $userInfo);
 }
