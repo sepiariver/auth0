@@ -29,7 +29,18 @@
 
 // Options
 $loginResourceId = (int) $modx->getOption('loginResourceId', $scriptProperties, 0);
+$loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
+$requireVerifiedEmail = $modx->getOption('requireVerifiedEmail', $scriptProperties, true);
+$unverifiedEmailTpl = $modx->getOption('unverifiedEmailTpl', $scriptProperties, '@INLINE Email verification is required.');
+$userNotFoundTpl = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
 $debug = $modx->getOption('debug', $scriptProperties, false);
+
+// Redirect if already logged into current context 
+if ($loginResourceId && $modx->user->hasSessionContext($modx->context->key)) {
+    $loginResourceId = abs($loginResourceId);
+    $modx->sendRedirect($modx->makeUrl($loginResourceId));
+    return;
+}
 
 // Paths
 $auth0Path = $modx->getOption('auth0.core_path', null, $modx->getOption('core_path') . 'components/auth0/');
@@ -45,12 +56,33 @@ if (!($auth0 instanceof Auth0)) {
 // Check login status
 $userInfo = $auth0->api->getUser();
 
-// Redirect if logged in
-if ($userInfo && $loginResourceId) {
-    $loginResourceId = abs($loginResourceId);
-    $modx->sendRedirect($modx->makeUrl($loginResourceId));
-    return;
+// Call login if no user
+if (!$userInfo) $auth0->api->login();
+
+// Return TPL if unverified email
+if (!$userInfo['email_verified'] && $requireVerifiedEmail) {
+    return $auth0->getChunk($unverifiedEmailTpl, $userInfo);
 }
 
-// Call login if no user
-$auth0->api->login();
+/** @var \modUser $user */
+$user = $modx->getObject('modUser', [
+    'username' => $userInfo['email']
+]);
+if (!$user) {
+    /** @var \modUserProfile $profile */
+    $profile = $this->modx->getObject('modUserProfile', ['email' => $userInfo['email']]);
+    if ($profile) {
+        $user = $profile->getOne('User');
+    }
+}
+if (!$user) {
+    return $auth0->getChunk($userNotFoundTpl, $userInfo);
+}
+
+// If we got this far, we have a MODX user. Add current context to login
+$loginContexts = $modx->context->key . ',' . $loginContexts;
+$loginContexts = $auth0->explodeAndClean($loginContexts);
+
+foreach ($loginContexts as $context) {
+    $user->addSessionContext($context);
+}
