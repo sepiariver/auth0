@@ -70,6 +70,7 @@ class Auth0
 
         // Load Auth0
         require_once($this->options['vendorPath'] . 'autoload.php');
+        $this->init();
 
     }
 
