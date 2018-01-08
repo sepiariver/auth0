@@ -1,0 +1,12 @@
+{
+    "name": "sepiariver/auth0",
+    "description": "Auth0 integration for MODX CMS.",
+    "require": {
+        "auth0/auth0-php": "^5.0"
+    },
+    "license": "GPLv2",
+    "authors": [{
+        "name": "YJ Tso",
+        "email": "info@sepiariver.com"
+    }]
+}
