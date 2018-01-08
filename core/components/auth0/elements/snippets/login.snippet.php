@@ -38,6 +38,7 @@ $requireVerifiedEmail = $modx->getOption('requireVerifiedEmail', $scriptProperti
 $unverifiedEmailTpl = $modx->getOption('unverifiedEmailTpl', $scriptProperties, '@INLINE Email verification is required.');
 $userNotFoundTpl = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
 $alreadyLoggedInTpl = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
+$successfulLoginTpl = $modx->getOption('successfulLoginTpl', $scriptProperties, '@INLINE Successfully logged-in.');
 $logoutParam = $modx->getOption('logoutParam', $scriptProperties, 'logout');
 $auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
@@ -66,11 +67,14 @@ if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
     $auth0->api->logout();
 }
 
+// Normalize loginResourceId
+$loginResourceId = abs($loginResourceId);
+$loginResourceUrl = ($loginResourceId) ? $modx->makeUrl($loginResourceId) : false;
+
 // If already logged into current context
 if ($modx->user->hasSessionContext($modx->context->key)) {
-    if ($loginResourceId) {
-        $loginResourceId = abs($loginResourceId);
-        $modx->sendRedirect($modx->makeUrl($loginResourceId));
+    if ($loginResourceUrl) {
+        $modx->sendRedirect($loginResourceUrl);
         return;
     } else {
         return $auth0->getChunk($alreadyLoggedInTpl, []);
@@ -106,4 +110,10 @@ if (!$user) {
 // If we got this far, we have a MODX user. Log them in.
 foreach ($loginContexts as $context) {
     $user->addSessionContext($context);
+}
+if ($loginResourceUrl) {
+    $modx->sendRedirect($loginResourceUrl);
+    return;
+} else {
+    return $auth0->getChunk($successfulLoginTpl, []);
 }
