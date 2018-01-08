@@ -96,6 +96,11 @@ if (!$userInfo['email_verified'] && $requireVerifiedEmail) {
     return $auth0->getChunk($unverifiedEmailTpl, $userInfo);
 }
 
+// Need email field from Auth0 user record
+if (!$userInfo['email']) {
+    return $auth0->getChunk($userNotFoundTpl, $userInfo);
+}
+
 /** @var \modUser $user */
 $user = $modx->getObject('modUser', [
     'username' => $userInfo['email']
