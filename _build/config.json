@@ -1,0 +1,21 @@
+{
+    "name": "Auth0",
+    "lowCaseName": "auth0",
+    "description": "Auth0 integration for MODX CMS.",
+    "author": "YJ Tso <info@sepiariver.com>",
+    "version": "0.0.1-dev1",
+    "package": {
+        "elements": {
+            "snippets": [{
+                "name": "PackageSnippet"
+            }],
+            "chunks": [{
+                "name": "PackageChunk"
+            }]
+        },
+        "systemSettings": [{
+            "key": "test_key",
+            "value": "it works"
+        }]
+    }
+}
