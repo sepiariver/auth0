@@ -7,15 +7,37 @@
     "package": {
         "elements": {
             "snippets": [{
-                "name": "PackageSnippet"
-            }],
-            "chunks": [{
-                "name": "PackageChunk"
+                "name": "auth0.getUser",
+                "file": "getuser.snippet.php"
             }]
         },
         "systemSettings": [{
-            "key": "test_key",
-            "value": "it works"
+            "key": "domain",
+            "value": ""
+        }, {
+            "key": "client_id",
+            "value": ""
+        }, {
+            "key": "client_secret",
+            "value": ""
+        }, {
+            "key": "redirect_uri",
+            "value": ""
+        }, {
+            "key": "audience",
+            "value": ""
+        }, {
+            "key": "scope",
+            "value": "openid profile"
+        }, {
+            "key": "persist_id_token",
+            "value": 0
+        }, {
+            "key": "persist_access_token",
+            "value": 0
+        }, {
+            "key": "persist_refresh_token",
+            "value": 0
         }]
     }
 }
