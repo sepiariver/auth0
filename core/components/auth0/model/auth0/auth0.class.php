@@ -51,7 +51,7 @@ class Auth0
             'jsUrl' => $assetsUrl . 'js/',
             'cssUrl' => $assetsUrl . 'css/',
             'connectorUrl' => $assetsUrl . 'connector.php',
-            'defaults' => array(
+            'auth0' => array(
                 'domain' => $this->getOption('domain', $options, ''),
                 'client_id' => $this->getOption('client_id', $options, ''),
                 'client_secret' => $this->getOption('client_secret', $options, ''),
@@ -72,7 +72,25 @@ class Auth0
 
     }
 
+    /**
+     * Create an Auth0 instance
+     *
+     */
+    public function init()
+    {
 
+        // Init storage
+        $auth0 = new Auth0\SDK\Auth0($this->options['auth0']);
+        if (!$auth0 instanceof Auth0\SDK\Auth0) {
+
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load Auth0\SDK\Auth0!');
+            return null;
+
+        }
+
+        return $auth0;
+
+    }
 
     /**
      * Send unauthorized without redirect, and exit.
