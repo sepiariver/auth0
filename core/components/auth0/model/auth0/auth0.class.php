@@ -78,7 +78,7 @@ class Auth0
      * Create an Auth0 instance
      *
      */
-    public function init()
+    private function init()
     {
 
         // Init Auth0
@@ -90,21 +90,6 @@ class Auth0
 
         }
 
-    }
-
-    /**
-     * Send unauthorized without redirect, and exit.
-     *
-     */
-    public function sendUnauthorized($exit = true)
-    {
-        if (!$exit) {
-            $this->modx->sendUnauthorizedPage();
-        } else {
-            header('HTTP/1.1 401 Unauthorized');
-            @session_write_close();
-            exit(0);
-        }
     }
 
     /* UTILITY METHODS (@theboxer) */

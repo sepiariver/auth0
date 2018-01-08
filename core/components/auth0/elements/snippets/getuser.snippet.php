@@ -33,6 +33,7 @@
 $loginUnauthorized = $modx->getOption('loginUnauthorized', $scriptProperties, true);
 $tpl = $modx->getOption('tpl', $scriptProperties, '');
 $default = $modx->getOption('default', $scriptProperties, '');
+$auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
 
 // Paths
@@ -40,7 +41,7 @@ $auth0Path = $modx->getOption('auth0.core_path', null, $modx->getOption('core_pa
 $auth0Path .= 'model/auth0/';
 
 // Get Class
-if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, $scriptProperties);
+if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, ['redirect_uri' => $auth0_redirect_uri]);
 if (!($auth0 instanceof Auth0)) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load the required class!');
     return;

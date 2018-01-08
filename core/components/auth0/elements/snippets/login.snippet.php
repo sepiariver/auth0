@@ -37,24 +37,44 @@ $loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
 $requireVerifiedEmail = $modx->getOption('requireVerifiedEmail', $scriptProperties, true);
 $unverifiedEmailTpl = $modx->getOption('unverifiedEmailTpl', $scriptProperties, '@INLINE Email verification is required.');
 $userNotFoundTpl = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
+$alreadyLoggedInTpl = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
+$logoutParam = $modx->getOption('logoutParam', $scriptProperties, 'logout');
+$auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
-
-// Redirect if already logged into current context
-if ($loginResourceId && $modx->user->hasSessionContext($modx->context->key)) {
-    $loginResourceId = abs($loginResourceId);
-    $modx->sendRedirect($modx->makeUrl($loginResourceId));
-    return;
-}
 
 // Paths
 $auth0Path = $modx->getOption('auth0.core_path', null, $modx->getOption('core_path') . 'components/auth0/');
 $auth0Path .= 'model/auth0/';
 
 // Get Class
-if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, $scriptProperties);
+if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, ['redirect_uri' => $auth0_redirect_uri]);
 if (!($auth0 instanceof Auth0)) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.login] could not load the required class!');
     return;
+}
+
+// Add current context
+$loginContexts = $modx->context->key . ',' . $loginContexts;
+$loginContexts = $auth0->explodeAndClean($loginContexts);
+
+// If logout param is true
+if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
+    // Log the user out
+    foreach ($loginContexts as $context) {
+        $modx->user->removeSessionContext($context);
+    }
+    $auth0->api->logout();
+}
+
+// If already logged into current context
+if ($modx->user->hasSessionContext($modx->context->key)) {
+    if ($loginResourceId) {
+        $loginResourceId = abs($loginResourceId);
+        $modx->sendRedirect($modx->makeUrl($loginResourceId));
+        return;
+    } else {
+        return $auth0->getChunk($alreadyLoggedInTpl, []);
+    }
 }
 
 // Check login status
@@ -74,7 +94,7 @@ $user = $modx->getObject('modUser', [
 ]);
 if (!$user) {
     /** @var \modUserProfile $profile */
-    $profile = $this->modx->getObject('modUserProfile', ['email' => $userInfo['email']]);
+    $profile = $modx->getObject('modUserProfile', ['email' => $userInfo['email']]);
     if ($profile) {
         $user = $profile->getOne('User');
     }
@@ -83,10 +103,7 @@ if (!$user) {
     return $auth0->getChunk($userNotFoundTpl, $userInfo);
 }
 
-// If we got this far, we have a MODX user. Add current context to login
-$loginContexts = $modx->context->key . ',' . $loginContexts;
-$loginContexts = $auth0->explodeAndClean($loginContexts);
-
+// If we got this far, we have a MODX user. Log them in.
 foreach ($loginContexts as $context) {
     $user->addSessionContext($context);
 }
