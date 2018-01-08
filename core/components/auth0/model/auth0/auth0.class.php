@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Auth0 class for MODX.
  * @package Auth0
@@ -58,100 +57,22 @@ class Auth0
                 'client_secret' => $this->getOption('client_secret', $options, ''),
                 'redirect_uri' => $this->getOption('redirect_uri', $options, ''),
                 'audience' => $this->getOption('audience', $options, ''),
-                'scope' => 'openid profile',
-                'persist_id_token' => false,
-                'persist_access_token' => false,
-                'persist_refresh_token' => false,
+                'scope' => $this->getOption('scope', $options, 'openid profile'),
+                'persist_id_token' => $this->getOption('persist_id_token', $options, false),
+                'persist_access_token' => $this->getOption('persist_access_token', $options, false),
+                'persist_refresh_token' => $this->getOption('persist_refresh_token', $options, false),
             ),
 
         ), $options);
 
-        /* load table names for OAuth2 PDO driver */
-        $this->tablenames = array(
-            'client_table' => $dbPrefix . 'auth0_clients',
-            'access_token_table' => $dbPrefix . 'auth0_access_tokens',
-            'refresh_token_table' => $dbPrefix . 'auth0_refresh_tokens',
-            'code_table' => $dbPrefix . 'auth0_authorization_codes',
-            'jwt_table'  => $dbPrefix . 'auth0_jwt',
-            'scope_table'  => $dbPrefix . 'auth0_scopes',
-        );
-
-        $this->modx->addPackage('auth0', $this->options['modelPath'], $this->modx->config['table_prefix']);
         $this->modx->lexicon->load('auth0:default');
 
-        // Load OAuth2
-        require_once($this->options['oauth2Path'] . 'Autoloader.php');
-        OAuth2\Autoloader::register();
+        // Load Auth0
+        require_once($this->options['vendorPath'] . 'autoload.php');
 
     }
 
-    /**
-     * Create an OAuth2 Server
-     *
-     */
-    public function createServer()
-    {
 
-        // Init storage
-        $storage = new OAuth2\Storage\Pdo($this->modx->config['connections'][0], $this->tablenames);
-        if (!$storage instanceof OAuth2\Storage\Pdo) {
-
-            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load a valid storage class!');
-            return null;
-
-        }
-        // Init server
-        $server = new OAuth2\Server($storage, $this->options['server']);
-
-        if (!$server instanceof OAuth2\Server) {
-
-            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load a valid server class!');
-            return null;
-
-        }
-
-        // Supported Grant Types
-        $server->addGrantType(new OAuth2\GrantType\AuthorizationCode($storage, $this->options['server']));
-        $server->addGrantType(new OAuth2\GrantType\RefreshToken($storage, $this->options['server']));
-        $server->addGrantType(new OAuth2\GrantType\ClientCredentials($storage, $this->options['server']));
-
-        return $server;
-
-    }
-
-    /**
-     * Create an OAuth2 Request Object
-     *
-     */
-    public function createRequest() {
-
-        $request = OAuth2\Request::createFromGlobals();
-        if ((!$request instanceof OAuth2\Request)) {
-
-            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not create a valid request object!');
-            return null;
-
-        }
-        return $request;
-
-    }
-
-    /**
-     * Create an OAuth2 Response Object
-     *
-     */
-    public function createResponse() {
-
-        $response = new OAuth2\Response();
-        if ((!$response instanceof OAuth2\Response)) {
-
-            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not create a valid response object!');
-            return null;
-
-        }
-        return $response;
-
-    }
 
     /**
      * Send unauthorized without redirect, and exit.
@@ -167,7 +88,6 @@ class Auth0
         }
     }
 
-
     /* UTILITY METHODS (@theboxer) */
     /**
      * Get a local configuration option or a namespaced system setting by key.
@@ -178,6 +98,7 @@ class Auth0
      * namespaced system setting; by default this value is null.
      * @return mixed The option value or the default value specified.
      */
+
     public function getOption($key, $options = array(), $default = null)
     {
         $option = $default;
@@ -202,6 +123,7 @@ class Auth0
 
         return $array;
     }
+
     public function getChunk($tpl, $phs)
     {
         if (strpos($tpl, '@INLINE ') !== false) {
@@ -215,4 +137,5 @@ class Auth0
 
         return $this->modx->getChunk($tpl, $phs);
     }
+
 }
