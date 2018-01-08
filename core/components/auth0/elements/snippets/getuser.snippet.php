@@ -56,3 +56,5 @@ if (!$userInfo) {
 } else {
     var_dump($userInfo);
 }
+
+if ($_GET['logout']) $auth0->logout();

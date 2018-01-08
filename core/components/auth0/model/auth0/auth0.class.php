@@ -57,7 +57,7 @@ class Auth0
                 'client_secret' => $this->getOption('client_secret', $options, ''),
                 'redirect_uri' => $this->getOption('redirect_uri', $options, ''),
                 'audience' => $this->getOption('audience', $options, ''),
-                'scope' => $this->getOption('scope', $options, 'openid profile'),
+                'scope' => $this->getOption('scope', $options, 'openid profile email address phone'),
                 'persist_id_token' => $this->getOption('persist_id_token', $options, false),
                 'persist_access_token' => $this->getOption('persist_access_token', $options, false),
                 'persist_refresh_token' => $this->getOption('persist_refresh_token', $options, false),

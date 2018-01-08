@@ -28,7 +28,7 @@
             "value": ""
         }, {
             "key": "scope",
-            "value": "openid profile"
+            "value": "openid profile email address phone"
         }, {
             "key": "persist_id_token",
             "value": 0
