@@ -5,13 +5,10 @@
  * Fetches an Auth0 user
  *
  * OPTIONS:
- * redirectUnauthorized -   (int) Sends unauthorized response, preventing anything below this Snippet
- *                          in the Resource/Template from being processed. If disabled, exit() WILL NOT
- *                          be called!. Return values can be customized in the properties below. Default 1
- * redirectTo -             (string) Accepts either 'error' or 'unauthorized'. Both methods call exit().
- *                          Default 'unauthorized'
- * returnOnUnauthorized -   (mixed) Specify a return value if request is unauthorized. Default 0
- * returnOnSuccess -        (mixed) Specify a return value if request is successfully verified. Default 1
+ * &loginUnauthorized - (bool) Enable/disable login when no authenticated user. Default true
+ * &tpl -               (string) Chunk TPL for userinfo output. Default ''
+ * &default -           (string) Default output. Default ''
+ * &debug -             (bool) Enable debug output. Default false
  *
  * @package Auth0
  * @author @sepiariver <info@sepiariver.com>
@@ -33,28 +30,40 @@
  **/
 
 // Options
-
+$loginUnauthorized = $modx->getOption('loginUnauthorized', $scriptProperties, true);
+$tpl = $modx->getOption('tpl', $scriptProperties, '');
+$default = $modx->getOption('default', $scriptProperties, '');
+$debug = $modx->getOption('debug', $scriptProperties, false);
 
 // Paths
 $auth0Path = $modx->getOption('auth0.core_path', null, $modx->getOption('core_path') . 'components/auth0/');
 $auth0Path .= 'model/auth0/';
 
 // Get Class
-if (file_exists($auth0Path . 'auth0.class.php')) $Auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, $scriptProperties);
-if (!($Auth0 instanceof Auth0)) {
+if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, $scriptProperties);
+if (!($auth0 instanceof Auth0)) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load the required class!');
     return;
 }
 
 // Init
-$auth0 = $Auth0->init();
+$auth0->init();
 
-$userInfo = $auth0->getUser();
+// Call userinfo
+$userInfo = $auth0->api->getUser();
 
+// Call login if no user
 if (!$userInfo) {
-    $auth0->login();
+    if ($loginUnauthorized) {
+        $auth0->api->login();
+    } else {
+        return $default;
+    }
 } else {
-    var_dump($userInfo);
+    // Display userinfo
+    if (empty($tpl)) {
+        if ($debug) return '<pre>' . print_r($userInfo, true) . '</pre>';
+        return $default;
+    }
+    return $modx->getChunk($tpl, $userInfo);
 }
-
-if ($_GET['logout']) $auth0->logout();

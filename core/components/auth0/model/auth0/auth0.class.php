@@ -26,6 +26,7 @@ class Auth0
     public $modx = null;
     public $namespace = 'auth0';
     public $options = array();
+    public $api = null;
 
     public function __construct(modX &$modx, array $options = array())
     {
@@ -79,16 +80,14 @@ class Auth0
     public function init()
     {
 
-        // Init storage
-        $auth0 = new Auth0\SDK\Auth0($this->options['auth0']);
-        if (!$auth0 instanceof Auth0\SDK\Auth0) {
+        // Init Auth0
+        $this->api = new Auth0\SDK\Auth0($this->options['auth0']);
+        if (!$this->api instanceof Auth0\SDK\Auth0) {
 
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load Auth0\SDK\Auth0!');
             return null;
 
         }
-
-        return $auth0;
 
     }
 
@@ -96,7 +95,8 @@ class Auth0
      * Send unauthorized without redirect, and exit.
      *
      */
-    public function sendUnauthorized($exit = true) {
+    public function sendUnauthorized($exit = true)
+    {
         if (!$exit) {
             $this->modx->sendUnauthorizedPage();
         } else {
