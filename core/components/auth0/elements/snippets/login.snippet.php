@@ -65,9 +65,10 @@ $loginContexts = $auth0->explodeAndClean($loginContexts);
 // If logout param is true
 if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
     // Log the user out
-    foreach ($loginContexts as $context) {
+    /*foreach ($loginContexts as $context) {
         $modx->user->removeSessionContext($context);
-    }
+    }*/
+    $auth0->modxLogout($loginContexts);
     $auth0->api->logout();
 }
 
@@ -117,7 +118,7 @@ if (!$user) {
 }
 
 // If we got this far, we have a MODX user. Log them in.
-$auth0->loginModUser($loginContexts, $userInfo['email']);
+$auth0->modxLogin($loginContexts, $userInfo['email']);
 if ($loginResourceUrl) {
     $modx->sendRedirect($loginResourceUrl);
     return;

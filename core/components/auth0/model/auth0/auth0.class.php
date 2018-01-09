@@ -95,7 +95,7 @@ class Auth0
 
     /**
      * Login MODX User
-     *
+     * WARNING: Logs-in any active, unblocked modUser WITHOUT A PASSWORD!
      */
     public function modxLogin($loginContexts = [], $username = '')
     {
@@ -105,14 +105,14 @@ class Auth0
             'username'      => $username,
         );
         $processorsPath = $this->getOption('processorsPath');
-        return $this->modx->runProcessor('customlogin', $properties, array('processors_path' => $processorsPath));
+        return $this->modx->runProcessor('auth0bypassloginprocessor', $properties, array('processors_path' => $processorsPath));
     }
 
     /**
      * Logout MODX User
      *
      */
-    public function modxLogout($loginContexts = [], $username = '')
+    public function modxLogout($loginContexts = [])
     {
         /* send to logout processor and handle response for each context */
         /** @var modProcessorResponse $response */

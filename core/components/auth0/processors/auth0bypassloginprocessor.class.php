@@ -28,7 +28,7 @@
  */
 require_once MODX_CORE_PATH.'model/modx/processors/security/login.class.php';
 
-class CustomLoginProcessor extends modSecurityLoginProcessor {
+class Auth0BypassLoginProcessor extends modSecurityLoginProcessor {
 
     /**
      * {@inheritDoc}
@@ -90,4 +90,4 @@ class CustomLoginProcessor extends modSecurityLoginProcessor {
     }
 
 }
-return 'CustomLoginProcessor';
+return 'Auth0BypassLoginProcessor';
