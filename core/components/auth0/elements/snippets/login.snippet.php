@@ -43,6 +43,7 @@ $unverifiedEmailTpl = $modx->getOption('unverifiedEmailTpl', $scriptProperties, 
 $userNotFoundTpl = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
 $alreadyLoggedInTpl = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
 $successfulLoginTpl = $modx->getOption('successfulLoginTpl', $scriptProperties, '@INLINE Successfully logged-in.');
+$failedLoginTpl = $modx->getOption('failedLoginTpl', $scriptProperties, '@INLINE Login failed. Please contact the system administrator.');
 $logoutParam = $modx->getOption('logoutParam', $scriptProperties, 'logout');
 $auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
@@ -65,9 +66,6 @@ $loginContexts = $auth0->explodeAndClean($loginContexts);
 // If logout param is true
 if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
     // Log the user out
-    /*foreach ($loginContexts as $context) {
-        $modx->user->removeSessionContext($context);
-    }*/
     $auth0->modxLogout($loginContexts);
     $auth0->api->logout();
 }
@@ -102,26 +100,29 @@ if (!$userInfo['email']) {
     return $auth0->getChunk($userNotFoundTpl, $userInfo);
 }
 
-/** @var \modUser $user */
-$user = $modx->getObject('modUser', [
+// Check user exists
+$userExists = $modx->getCount('modUser', [
     'username' => $userInfo['email']
 ]);
-if (!$user) {
+if (!$userExists) {
     /** @var \modUserProfile $profile */
-    $profile = $modx->getObject('modUserProfile', ['email' => $userInfo['email']]);
-    if ($profile) {
-        $user = $profile->getOne('User');
-    }
+    $userExists = $modx->getCount('modUserProfile', ['email' => $userInfo['email']]);
 }
-if (!$user) {
+if (!$userExists) {
     return $auth0->getChunk($userNotFoundTpl, $userInfo);
 }
 
 // If we got this far, we have a MODX user. Log them in.
-$auth0->modxLogin($loginContexts, $userInfo['email']);
-if ($loginResourceUrl) {
-    $modx->sendRedirect($loginResourceUrl);
-    return;
+$response = $auth0->modxLogin($loginContexts, $userInfo['email']);
+
+// If successful login
+if (!empty($response) && !$response->isError()) {
+    if ($loginResourceUrl) {
+        $modx->sendRedirect($loginResourceUrl);
+        return;
+    } else {
+        return $auth0->getChunk($successfulLoginTpl);
+    }
 } else {
-    return $auth0->getChunk($successfulLoginTpl);
+    return $auth0->getChunk($failedLoginTpl);
 }
