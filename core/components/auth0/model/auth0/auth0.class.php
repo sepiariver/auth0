@@ -44,6 +44,7 @@ class Auth0
             'corePath' => $corePath,
             'modelPath' => $corePath . 'model/',
             'vendorPath' => $corePath . 'model/vendor/',
+            'processorsPath' => $corePath . 'processors/',
             'chunksPath' => $corePath . 'elements/chunks/',
             'snippetsPath' => $corePath . 'elements/snippets/',
             'templatesPath' => $corePath . 'templates/',
@@ -90,6 +91,17 @@ class Auth0
 
         }
 
+    }
+
+    public function loginModUser($loginContexts = [], $username = '')
+    {
+        $properties = array(
+            'login_context' => array_shift($loginContexts),
+            'add_contexts'  => implode(',', $loginContexts),
+            'username'      => $username,
+        );
+        $processorsPath = $this->getOption('processorsPath');
+        return $this->modx->runProcessor('customlogin', $properties, array('processors_path' => $processorsPath));
     }
 
     /* UTILITY METHODS (@theboxer) */
