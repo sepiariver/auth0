@@ -93,7 +93,11 @@ class Auth0
 
     }
 
-    public function loginModUser($loginContexts = [], $username = '')
+    /**
+     * Login MODX User
+     *
+     */
+    public function modxLogin($loginContexts = [], $username = '')
     {
         $properties = array(
             'login_context' => array_shift($loginContexts),
@@ -102,6 +106,25 @@ class Auth0
         );
         $processorsPath = $this->getOption('processorsPath');
         return $this->modx->runProcessor('customlogin', $properties, array('processors_path' => $processorsPath));
+    }
+
+    /**
+     * Logout MODX User
+     *
+     */
+    public function modxLogout($loginContexts = [], $username = '')
+    {
+        /* send to logout processor and handle response for each context */
+        /** @var modProcessorResponse $response */
+        $response = $this->modx->runProcessor('security/logout',array(
+            'login_context' => array_shift($loginContexts),
+            'add_contexts' => implode(',', $loginContexts),
+        ));
+        /* if successful logout */
+        if (!empty($response) && !$response->isError()) {
+        /* logout failed, output error */
+        } else {
+        }
     }
 
     /* UTILITY METHODS (@theboxer) */
@@ -115,7 +138,7 @@ class Auth0
      * @return mixed The option value or the default value specified.
      */
 
-    public function getOption($key, $options = array(), $default = null)
+    public function getOption($key = '', $options = [], $default = null)
     {
         $option = $default;
         if (!empty($key) && is_string($key)) {
@@ -130,7 +153,7 @@ class Auth0
         return $option;
     }
 
-    public function explodeAndClean($array, $delimiter = ',')
+    public function explodeAndClean($array = [], $delimiter = ',')
     {
         $array = explode($delimiter, $array);     // Explode fields to array
         $array = array_map('trim', $array);       // Trim array's values
