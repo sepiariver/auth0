@@ -7,9 +7,6 @@
     "package": {
         "elements": {
             "snippets": [{
-                "name": "auth0.getUser",
-                "file": "getuser.snippet.php"
-            }, {
                 "name": "auth0.login",
                 "file": "login.snippet.php"
             }, {

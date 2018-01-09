@@ -130,6 +130,7 @@ class Auth0
 
     public function getChunk($tpl, $phs)
     {
+        if (!is_array($phs)) $phs = [];
         if (strpos($tpl, '@INLINE ') !== false) {
             $content = str_replace('@INLINE', '', $tpl);
             /** @var \modChunk $chunk */

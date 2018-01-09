@@ -5,11 +5,11 @@
  * Check user login state and show content or redirect accordingly
  *
  * OPTIONS:
- * &loginUnauthorized -     (bool) Enable/disable redirect to Auth0 if not logged-in. Default true
- * &loggedInTpl -           (string) Chunk TPL to render when logged in. Default '@INLINE ...'
- * &anonymousTpl -          (string) Chunk TPL to render when not logged in. Default '@INLINE ...'
- * &redirect_uri -          (string) Auth0 redirect URI. Default {current Resource's URI}
- * &debug -                 (bool) Enable debug output. Default false
+ * &forceLogin -    (bool) Enable/disable forwarding to Auth0 for login if anonymous. &anonymousTpl will not be displayed if this is true. Default true
+ * &loggedInTpl -   (string) Chunk TPL to render when logged in. Default '@INLINE ...'
+ * &auth0UserTpl -  (string) Chunk TPL to render when logged into Auth0 but not MODX. Default '@INLINE ...'
+ * &anonymousTpl -  (string) Chunk TPL to render when not logged in. Default '@INLINE ...'
+ * &debug -         (bool) Enable debug output. Default false
  *
  * @package Auth0
  * @author @sepiariver <info@sepiariver.com>
@@ -31,10 +31,10 @@
  **/
 
 // Options
-$loginUnauthorized = $modx->getOption('loginUnauthorized', $scriptProperties, true);
+$forceLogin = $modx->getOption('forceLogin', $scriptProperties, true);
 $loggedInTpl = $modx->getOption('loggedInTpl', $scriptProperties, '@INLINE You\'re logged in.');
+$auth0UserTpl = $modx->getOption('auth0UserTpl', $scriptProperties, '@INLINE Your Auth0 user isn\'t valid here. Try logging in again.');
 $anonymousTpl = $modx->getOption('anonymousTpl', $scriptProperties, '@INLINE Login required.');
-$auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
 
 // Paths
@@ -42,20 +42,35 @@ $auth0Path = $modx->getOption('auth0.core_path', null, $modx->getOption('core_pa
 $auth0Path .= 'model/auth0/';
 
 // Get Class
-if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, ['redirect_uri' => $auth0_redirect_uri]);
+if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path);
 if (!($auth0 instanceof Auth0)) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not load the required class!');
     return;
 }
 
+// Expose properties for TPL
+$props = $scriptProperties;
+
+// Call for userinfo
+$userInfo = $auth0->api->getUser();
+if ($userInfo) {
+    $props = array_merge($props, array_map('htmlspecialchars', $userInfo));
+}
+
 // Check for session
 if ($modx->user->hasSessionContext($modx->context->key)) {
-    return $auth0->getChunk($loggedInTpl, $scriptProperties);
+    // MODX session is the record of truth for logged-in state
+    if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
+    return $auth0->getChunk($loggedInTpl, $props);
 } else {
-    if ($loginUnauthorized) {
-        $auth0->api->login();
-        return;
+    if ($userInfo) {
+        // User logged-in to Auth0 but not MODX
+        if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
+        return $auth0->getChunk($auth0UserTpl, $props);
     } else {
-        return $auth0->getChunk($anonymousTpl, $scriptProperties);
+        // User not logged-in to Auth0
+        if ($forceLogin) $auth0->api->login();
+        if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
+        return $auth0->getChunk($anonymousTpl, $props);
     }
 }

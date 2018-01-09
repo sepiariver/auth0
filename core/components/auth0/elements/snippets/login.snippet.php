@@ -81,7 +81,7 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
         $modx->sendRedirect($loginResourceUrl);
         return;
     } else {
-        return $auth0->getChunk($alreadyLoggedInTpl, []);
+        return $auth0->getChunk($alreadyLoggedInTpl);
     }
 }
 
@@ -124,5 +124,5 @@ if ($loginResourceUrl) {
     $modx->sendRedirect($loginResourceUrl);
     return;
 } else {
-    return $auth0->getChunk($successfulLoginTpl, []);
+    return $auth0->getChunk($successfulLoginTpl);
 }
