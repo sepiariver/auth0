@@ -1,3 +1,9 @@
+Auth0 0.1.0-dev1
+****************
+
+Pre-release version.
+Better login/logout of modUser.
+
 Auth0 0.0.1-dev1
 ****************
 
