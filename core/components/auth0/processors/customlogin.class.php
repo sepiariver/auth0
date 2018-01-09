@@ -36,7 +36,6 @@ class CustomLoginProcessor extends modSecurityLoginProcessor {
      */
     public function initialize()
     {
-        var_dump(__LINE__);
         $this->username = $this->getProperty('username');
 
         $this->givenPassword = $this->getProperty('password');

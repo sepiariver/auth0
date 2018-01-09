@@ -117,9 +117,7 @@ if (!$user) {
 }
 
 // If we got this far, we have a MODX user. Log them in.
-foreach ($loginContexts as $context) {
-    $user->addSessionContext($context);
-}
+$auth0->loginModUser($loginContexts, $userInfo['email']);
 if ($loginResourceUrl) {
     $modx->sendRedirect($loginResourceUrl);
     return;
