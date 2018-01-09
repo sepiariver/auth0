@@ -44,6 +44,7 @@ $userNotFoundTpl = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLI
 $alreadyLoggedInTpl = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
 $successfulLoginTpl = $modx->getOption('successfulLoginTpl', $scriptProperties, '@INLINE Successfully logged-in.');
 $failedLoginTpl = $modx->getOption('failedLoginTpl', $scriptProperties, '@INLINE Login failed. Please contact the system administrator.');
+$failedLogoutTpl = $modx->getOption('failedLogoutTpl', $scriptProperties, '@INLINE Logout failed. Please contact the system administrator.');
 $logoutParam = $modx->getOption('logoutParam', $scriptProperties, 'logout');
 $auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
@@ -66,7 +67,11 @@ $loginContexts = $auth0->explodeAndClean($loginContexts);
 // If logout param is true
 if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
     // Log the user out
-    $auth0->modxLogout($loginContexts);
+    $response = $auth0->modxLogout($loginContexts);
+    /* if failed logout */
+    if (empty($response) || $response->isError()) {
+        return $auth0->getChunk($failedLogoutTpl);
+    }
     $auth0->api->logout();
 }
 

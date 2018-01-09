@@ -105,6 +105,7 @@ class Auth0
             'username'      => $username,
         );
         $processorsPath = $this->getOption('processorsPath');
+        /** @var modProcessorResponse $response */
         return $this->modx->runProcessor('auth0bypassloginprocessor', $properties, array('processors_path' => $processorsPath));
     }
 
@@ -116,15 +117,10 @@ class Auth0
     {
         /* send to logout processor and handle response for each context */
         /** @var modProcessorResponse $response */
-        $response = $this->modx->runProcessor('security/logout',array(
+        return $this->modx->runProcessor('security/logout',array(
             'login_context' => array_shift($loginContexts),
             'add_contexts' => implode(',', $loginContexts),
         ));
-        /* if successful logout */
-        if (!empty($response) && !$response->isError()) {
-        /* logout failed, output error */
-        } else {
-        }
     }
 
     /* UTILITY METHODS (@theboxer) */
