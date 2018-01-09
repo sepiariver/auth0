@@ -12,6 +12,9 @@
             }, {
                 "name": "auth0.login",
                 "file": "login.snippet.php"
+            }, {
+                "name": "auth0.loggedIn",
+                "file": "loggedin.snippet.php"
             }]
         },
         "systemSettings": [{

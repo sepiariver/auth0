@@ -1,14 +1,15 @@
 <?php
 /**
- * auth0.getUser
+ * auth0.loggedIn
  *
- * Fetches an Auth0 user
+ * Check user login state and show content or redirect accordingly
  *
  * OPTIONS:
- * &loginUnauthorized - (bool) Enable/disable login when no authenticated user. Default true
- * &tpl -               (string) Chunk TPL for userinfo output. Default ''
- * &default -           (string) Default output. Default ''
- * &debug -             (bool) Enable debug output. Default false
+ * &loginUnauthorized -     (bool) Enable/disable redirect to Auth0 if not logged-in. Default true
+ * &loggedInTpl -           (string) Chunk TPL to render when logged in. Default '@INLINE ...'
+ * &anonymousTpl -          (string) Chunk TPL to render when not logged in. Default '@INLINE ...'
+ * &redirect_uri -          (string) Auth0 redirect URI. Default {current Resource's URI}
+ * &debug -                 (bool) Enable debug output. Default false
  *
  * @package Auth0
  * @author @sepiariver <info@sepiariver.com>
@@ -31,8 +32,8 @@
 
 // Options
 $loginUnauthorized = $modx->getOption('loginUnauthorized', $scriptProperties, true);
-$tpl = $modx->getOption('tpl', $scriptProperties, '');
-$default = $modx->getOption('default', $scriptProperties, '');
+$loggedInTpl = $modx->getOption('loggedInTpl', $scriptProperties, '@INLINE You\'re logged in.');
+$anonymousTpl = $modx->getOption('anonymousTpl', $scriptProperties, '@INLINE Login required.');
 $auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
 
@@ -43,25 +44,18 @@ $auth0Path .= 'model/auth0/';
 // Get Class
 if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, ['redirect_uri' => $auth0_redirect_uri]);
 if (!($auth0 instanceof Auth0)) {
-    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.getUser] could not load the required class!');
+    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not load the required class!');
     return;
 }
 
-// Call userinfo
-$userInfo = $auth0->api->getUser();
-
-// Call login if no user
-if (!$userInfo) {
+// Check for session
+if ($modx->user->hasSessionContext($modx->context->key)) {
+    return $auth0->getChunk($loggedInTpl, $scriptProperties);
+} else {
     if ($loginUnauthorized) {
         $auth0->api->login();
+        return;
     } else {
-        return $default;
+        return $auth0->getChunk($anonymousTpl, $scriptProperties);
     }
-} else {
-    // Display userinfo
-    if (empty($tpl)) {
-        if ($debug) return '<pre>' . print_r($userInfo, true) . '</pre>';
-        return $default;
-    }
-    return $auth0->getChunk($tpl, $userInfo);
 }
