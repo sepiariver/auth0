@@ -6,6 +6,8 @@ This initial pre-release version is the most basic integration. The auth0.login 
 
 This package does not create nor modify modUser records. Please see considerations below.
 
+You can read the blog post here.
+
 Installation
 Install via MODX Extras Installer. Or you can download from the _packages directory.
 
