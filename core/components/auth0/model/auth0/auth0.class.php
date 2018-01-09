@@ -128,8 +128,9 @@ class Auth0
         return $array;
     }
 
-    public function getChunk($tpl, $phs)
+    public function getChunk($tpl = '', $phs = [])
     {
+        if (empty($tpl)) return '';
         if (!is_array($phs)) $phs = [];
         if (strpos($tpl, '@INLINE ') !== false) {
             $content = str_replace('@INLINE', '', $tpl);
