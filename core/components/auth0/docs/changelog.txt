@@ -1,3 +1,9 @@
+Auth0 0.2.0-dev1
+****************
+
+Pre-release version.
+Better code organization.
+
 Auth0 0.1.0-dev1
 ****************
 

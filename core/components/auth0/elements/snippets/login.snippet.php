@@ -92,7 +92,7 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
     }
 }
 
-// Check login status, redirect to login if no userInfo
+// Check login status, redirect to login if no userinfo
 $userinfo = $auth0->getUser(true);
 
 // Verify User

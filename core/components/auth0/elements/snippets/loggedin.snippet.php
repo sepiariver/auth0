@@ -58,9 +58,9 @@ if (!$auth0->init()) {
 $props = $scriptProperties;
 
 // Call for userinfo
-$userInfo = $auth0->getUser($forceLogin);
-if ($userInfo) {
-    $props = array_merge($props, $userInfo);
+$userinfo = $auth0->getUser($forceLogin);
+if ($userinfo) {
+    $props = array_merge($props, $userinfo);
 }
 
 // Check for session
@@ -69,7 +69,7 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
     if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
     return $auth0->getChunk($loggedInTpl, $props);
 } else {
-    if ($userInfo) {
+    if ($userinfo) {
         // User logged-in to Auth0 but not MODX
         if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
         return $auth0->getChunk($auth0UserTpl, $props);

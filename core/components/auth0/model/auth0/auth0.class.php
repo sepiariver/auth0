@@ -28,7 +28,7 @@ class Auth0
     public $options = array();
     protected $api = null;
     protected $userinfo = null;
-    public $verifiedstate = null;
+    public $verifiedState = null;
 
     public function __construct(modX &$modx, array $options = array())
     {
@@ -141,13 +141,13 @@ class Auth0
         if ($this->verifiedState !== null) return $this->verifiedState;
 
         if (!$userinfo['email_verified'] && $this->getOption('requireVerifiedEmail')) {
-            $this->$verifiedstate = 'unverifiedEmail';
+            $this->$verifiedState = 'unverifiedEmail';
             return $this->verifiedState;
         }
 
         // Need email field from Auth0 user record
         if (!$userinfo['email']) {
-            $this->$verifiedstate = 'userNotFound';
+            $this->$verifiedState = 'userNotFound';
             return $this->verifiedState;
         }
 
@@ -162,12 +162,12 @@ class Auth0
         }
 
         if (!$userExists) {
-            $this->$verifiedstate = 'userNotFound';
+            $this->$verifiedState = 'userNotFound';
             return $this->verifiedState;
         }
 
-        // Verified 
-        $this->$verifiedstate = true;
+        // Verified
+        $this->$verifiedState = true;
         return $this->verifiedState;
 
     }
