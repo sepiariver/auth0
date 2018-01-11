@@ -39,8 +39,8 @@
 $loginResourceId = (int) $modx->getOption('loginResourceId', $scriptProperties, 0);
 $loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
 $requireVerifiedEmail = $modx->getOption('requireVerifiedEmail', $scriptProperties, true);
-$unverifiedEmailTpl = $modx->getOption('unverifiedEmailTpl', $scriptProperties, '@INLINE Email verification is required.');
-$userNotFoundTpl = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
+$tpls['unverifiedEmailTpl'] = $modx->getOption('unverifiedEmailTpl', $scriptProperties, '@INLINE Email verification is required.');
+$tpls['userNotFoundTpl'] = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
 $alreadyLoggedInTpl = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
 $successfulLoginTpl = $modx->getOption('successfulLoginTpl', $scriptProperties, '@INLINE Successfully logged-in.');
 $failedLoginTpl = $modx->getOption('failedLoginTpl', $scriptProperties, '@INLINE Login failed. Please contact the system administrator.');
@@ -53,9 +53,18 @@ $auth0Path = $modx->getOption('auth0.core_path', null, $modx->getOption('core_pa
 $auth0Path .= 'model/auth0/';
 
 // Get Class
-if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, ['redirect_uri' => $auth0_redirect_uri]);
+if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, [
+    'redirect_uri' => $auth0_redirect_uri,
+    'requireVerifiedEmail' => $requireVerifiedEmail,
+]);
 if (!($auth0 instanceof Auth0)) {
-    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.login] could not load the required class!');
+    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.login] could not load the required class on line: ' . __LINE__);
+    return;
+}
+
+// Setup
+if (!$auth0->init()) {
+    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.login] could not setup Auth0 on line: ' . __LINE__);
     return;
 }
 
@@ -66,8 +75,7 @@ $loginContexts = $auth0->explodeAndClean($loginContexts);
 // If logout param is true
 if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
     // Log the user out
-    $response = $auth0->modxLogout($loginContexts);
-    $auth0->api->logout();
+    $auth0->logout();
 }
 
 // Normalize loginResourceId
@@ -84,32 +92,14 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
     }
 }
 
-// Check login status
-$userInfo = $auth0->api->getUser();
+// Check login status, redirect to login if no userInfo
+$userInfo = $auth0->getUser(true);
 
-// Call login if no user
-if (!$userInfo) $auth0->api->login();
+// Verify User
+$verifiedState = $auth0->verify($userInfo);
 
-// Return TPL if unverified email
-if (!$userInfo['email_verified'] && $requireVerifiedEmail) {
-    return $auth0->getChunk($unverifiedEmailTpl, $userInfo);
-}
-
-// Need email field from Auth0 user record
-if (!$userInfo['email']) {
-    return $auth0->getChunk($userNotFoundTpl, $userInfo);
-}
-
-// Check user exists
-$userExists = $modx->getCount('modUser', [
-    'username' => $userInfo['email']
-]);
-if (!$userExists) {
-    /** @var \modUserProfile $profile */
-    $userExists = $modx->getCount('modUserProfile', ['email' => $userInfo['email']]);
-}
-if (!$userExists) {
-    return $auth0->getChunk($userNotFoundTpl, $userInfo);
+if ($verifiedState !== true) {
+    return $auth0->getChunk($tpls[$verifiedState . 'Tpl'], $userInfo);
 }
 
 // If we got this far, we have a MODX user. Log them in.

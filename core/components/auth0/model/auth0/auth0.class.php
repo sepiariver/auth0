@@ -26,7 +26,9 @@ class Auth0
     public $modx = null;
     public $namespace = 'auth0';
     public $options = array();
-    public $api = null;
+    protected $api = null;
+    protected $userinfo = null;
+    public $verifiedstate = null;
 
     public function __construct(modX &$modx, array $options = array())
     {
@@ -71,7 +73,6 @@ class Auth0
 
         // Load Auth0
         require_once($this->options['vendorPath'] . 'autoload.php');
-        $this->init();
 
     }
 
@@ -79,7 +80,7 @@ class Auth0
      * Create an Auth0 instance
      *
      */
-    private function init()
+    public function init()
     {
 
         // Init Auth0
@@ -87,9 +88,87 @@ class Auth0
         if (!$this->api instanceof Auth0\SDK\Auth0) {
 
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load Auth0\SDK\Auth0!');
-            return null;
+            return false;
 
         }
+        return true;
+
+    }
+
+    /**
+     * Get userinfo
+     *
+     */
+    public function getUser($forceLogin = false)
+    {
+
+        // Do we already have userinfo?
+        if ($this->userinfo) return $this->userinfo;
+        // Call the api
+        try {
+            $userinfo = $this->api->getUser();
+            $this->userinfo = (is_array($userinfo)) ? array_map('htmlspecialchars', $userinfo) : null;
+            if (!$this->userinfo && $forceLogin) $this->sendToLogin();
+            return $this->userinfo;
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+            return null;
+        }
+
+    }
+
+    /**
+     * Send user to Auth0 login screen
+     *
+     */
+    public function sendToLogin() {
+
+        try {
+            $this->api->login();
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+            return false;
+        }
+
+    }
+
+    /**
+     * Verify User
+     */
+    public function verify($userinfo = [])
+    {
+
+        if ($this->verifiedState !== null) return $this->verifiedState;
+
+        if (!$userinfo['email_verified'] && $this->getOption('requireVerifiedEmail')) {
+            $this->$verifiedstate = 'unverifiedEmail';
+            return $this->verifiedState;
+        }
+
+        // Need email field from Auth0 user record
+        if (!$userinfo['email']) {
+            $this->$verifiedstate = 'userNotFound';
+            return $this->verifiedState;
+        }
+
+        // Check MODX User exists
+        $userExists = $modx->getCount('modUser', [
+            'username' => $userinfo['email']
+        ]);
+
+        if (!$userExists) {
+            /** @var \modUserProfile $profile */
+            $userExists = $modx->getCount('modUserProfile', ['email' => $userinfo['email']]);
+        }
+
+        if (!$userExists) {
+            $this->$verifiedstate = 'userNotFound';
+            return $this->verifiedState;
+        }
+
+        // Verified 
+        $this->$verifiedstate = true;
+        return $this->verifiedState;
 
     }
 
@@ -97,7 +176,7 @@ class Auth0
      * Login MODX User
      * WARNING: Logs-in any active, unblocked modUser WITHOUT A PASSWORD!
      */
-    public function modxLogin($loginContexts = [], $username = '')
+    protected function modxLogin($loginContexts = [], $username = '')
     {
         $properties = array(
             'login_context' => array_shift($loginContexts),
@@ -110,10 +189,21 @@ class Auth0
     }
 
     /**
+     * Logout
+     *
+     */
+    public function logout($loginContexts = [])
+    {
+        $this->modxLogout($loginContexts);
+        $this->api->logout();
+    }
+
+
+    /**
      * Logout MODX User
      *
      */
-    public function modxLogout($loginContexts = [])
+    protected function modxLogout($loginContexts = [])
     {
         /* send to logout processor and handle response for each context */
         /** @var modProcessorResponse $response */

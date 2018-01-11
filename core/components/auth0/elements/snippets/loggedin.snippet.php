@@ -44,7 +44,13 @@ $auth0Path .= 'model/auth0/';
 // Get Class
 if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path);
 if (!($auth0 instanceof Auth0)) {
-    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not load the required class!');
+    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not load the required class on line: ' . __LINE__);
+    return;
+}
+
+// Setup
+if (!$auth0->init()) {
+    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not setup Auth0 on line: ' . __LINE__);
     return;
 }
 
@@ -52,9 +58,9 @@ if (!($auth0 instanceof Auth0)) {
 $props = $scriptProperties;
 
 // Call for userinfo
-$userInfo = $auth0->api->getUser();
+$userInfo = $auth0->getUser($forceLogin);
 if ($userInfo) {
-    $props = array_merge($props, array_map('htmlspecialchars', $userInfo));
+    $props = array_merge($props, $userInfo);
 }
 
 // Check for session
@@ -69,7 +75,6 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
         return $auth0->getChunk($auth0UserTpl, $props);
     } else {
         // User not logged-in to Auth0
-        if ($forceLogin) $auth0->api->login();
         if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
         return $auth0->getChunk($anonymousTpl, $props);
     }
