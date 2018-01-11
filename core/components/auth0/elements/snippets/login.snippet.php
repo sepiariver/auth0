@@ -41,9 +41,9 @@ $loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
 $requireVerifiedEmail = $modx->getOption('requireVerifiedEmail', $scriptProperties, true);
 $tpls['unverifiedEmailTpl'] = $modx->getOption('unverifiedEmailTpl', $scriptProperties, '@INLINE Email verification is required.');
 $tpls['userNotFoundTpl'] = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
-$alreadyLoggedInTpl = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
-$successfulLoginTpl = $modx->getOption('successfulLoginTpl', $scriptProperties, '@INLINE Successfully logged-in.');
-$failedLoginTpl = $modx->getOption('failedLoginTpl', $scriptProperties, '@INLINE Login failed. Please contact the system administrator.');
+$tpls['alreadyLoggedInTpl'] = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
+$tpls['successfulLoginTpl'] = $modx->getOption('successfulLoginTpl', $scriptProperties, '@INLINE Successfully logged-in.');
+$tpls['failedLoginTpl'] = $modx->getOption('failedLoginTpl', $scriptProperties, '@INLINE Login failed. Please contact the system administrator.');
 $logoutParam = $modx->getOption('logoutParam', $scriptProperties, 'logout');
 $auth0_redirect_uri = $modx->getOption('redirect_uri', $scriptProperties, $modx->makeUrl($modx->resource->get('id'), '', '', 'full'));
 $debug = $modx->getOption('debug', $scriptProperties, false);
@@ -88,22 +88,22 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
         $modx->sendRedirect($loginResourceUrl);
         return;
     } else {
-        return $auth0->getChunk($alreadyLoggedInTpl);
+        return $auth0->getChunk($tpls['alreadyLoggedInTpl']);
     }
 }
 
 // Check login status, redirect to login if no userInfo
-$userInfo = $auth0->getUser(true);
+$userinfo = $auth0->getUser(true);
 
 // Verify User
-$verifiedState = $auth0->verify($userInfo);
+$verifiedState = $auth0->verify($userinfo);
 
 if ($verifiedState !== true) {
-    return $auth0->getChunk($tpls[$verifiedState . 'Tpl'], $userInfo);
+    return $auth0->getChunk($tpls[$verifiedState . 'Tpl'], $userinfo);
 }
 
 // If we got this far, we have a MODX user. Log them in.
-$response = $auth0->modxLogin($loginContexts, $userInfo['email']);
+$response = $auth0->modxLogin($loginContexts, $userinfo['email']);
 
 // If successful login
 if (!empty($response) && !$response->isError()) {
@@ -111,8 +111,8 @@ if (!empty($response) && !$response->isError()) {
         $modx->sendRedirect($loginResourceUrl);
         return;
     } else {
-        return $auth0->getChunk($successfulLoginTpl);
+        return $auth0->getChunk($tpls['successfulLoginTpl']);
     }
 } else {
-    return $auth0->getChunk($failedLoginTpl);
+    return $auth0->getChunk($tpls['failedLoginTpl']);
 }
