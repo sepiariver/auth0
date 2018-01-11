@@ -152,13 +152,13 @@ class Auth0
         }
 
         // Check MODX User exists
-        $userExists = $modx->getCount('modUser', [
+        $userExists = $this->modx->getCount('modUser', [
             'username' => $userinfo['email']
         ]);
 
         if (!$userExists) {
             /** @var \modUserProfile $profile */
-            $userExists = $modx->getCount('modUserProfile', ['email' => $userinfo['email']]);
+            $userExists = $this->modx->getCount('modUserProfile', ['email' => $userinfo['email']]);
         }
 
         if (!$userExists) {
