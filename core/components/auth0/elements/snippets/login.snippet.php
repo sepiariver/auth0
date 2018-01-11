@@ -75,7 +75,7 @@ $loginContexts = $auth0->explodeAndClean($loginContexts);
 // If logout param is true
 if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
     // Log the user out
-    $auth0->logout();
+    $auth0->logout($loginContexts);
 }
 
 // Normalize loginResourceId
@@ -96,9 +96,8 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
 $userinfo = $auth0->getUser(true);
 
 // Verify User
-$verifiedState = $auth0->verify($userinfo);
-
-if ($verifiedState !== true) {
+$verifiedState = $auth0->verifyUser();
+if ($verifiedState !== 'verified') {
     return $auth0->getChunk($tpls[$verifiedState . 'Tpl'], $userinfo);
 }
 

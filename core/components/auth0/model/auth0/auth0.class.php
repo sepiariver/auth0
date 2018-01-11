@@ -28,7 +28,7 @@ class Auth0
     public $options = array();
     protected $api = null;
     protected $userinfo = null;
-    public $verifiedState = null;
+    protected $verifiedState = '';
 
     public function __construct(modX &$modx, array $options = array())
     {
@@ -135,39 +135,40 @@ class Auth0
     /**
      * Verify User
      */
-    public function verify($userinfo = [])
+    public function verifyUser()
     {
 
-        if ($this->verifiedState !== null) return $this->verifiedState;
+        if (!empty($this->verifiedState)) return $this->verifiedState;
 
-        if (!$userinfo['email_verified'] && $this->getOption('requireVerifiedEmail')) {
-            $this->$verifiedState = 'unverifiedEmail';
+        // Check email verification
+        if (!$this->userinfo['email_verified'] && $this->getOption('requireVerifiedEmail')) {
+            $this->verifiedState = 'unverifiedEmail';
             return $this->verifiedState;
         }
 
         // Need email field from Auth0 user record
-        if (!$userinfo['email']) {
-            $this->$verifiedState = 'userNotFound';
+        if (!$this->userinfo['email']) {
+            $this->verifiedState = 'userNotFound';
             return $this->verifiedState;
         }
 
         // Check MODX User exists
         $userExists = $this->modx->getCount('modUser', [
-            'username' => $userinfo['email']
+            'username' => $this->userinfo['email']
         ]);
 
         if (!$userExists) {
             /** @var \modUserProfile $profile */
-            $userExists = $this->modx->getCount('modUserProfile', ['email' => $userinfo['email']]);
+            $userExists = $this->modx->getCount('modUserProfile', ['email' => $this->userinfo['email']]);
         }
 
         if (!$userExists) {
-            $this->$verifiedState = 'userNotFound';
+            $this->verifiedState = 'userNotFound';
             return $this->verifiedState;
         }
 
         // Verified
-        $this->$verifiedState = true;
+        $this->verifiedState = 'verified';
         return $this->verifiedState;
 
     }
@@ -175,16 +176,19 @@ class Auth0
     /**
      * Login MODX User
      * WARNING: Logs-in any active, unblocked modUser WITHOUT A PASSWORD!
+     * @return modProcessorResponse $response
      */
-    protected function modxLogin($loginContexts = [], $username = '')
+    public function modxLogin($loginContexts = [], $username = '')
     {
+        if ($this->verifyUser() !== 'verified') {
+            return false;
+        }
         $properties = array(
             'login_context' => array_shift($loginContexts),
             'add_contexts'  => implode(',', $loginContexts),
             'username'      => $username,
         );
         $processorsPath = $this->getOption('processorsPath');
-        /** @var modProcessorResponse $response */
         return $this->modx->runProcessor('auth0bypassloginprocessor', $properties, array('processors_path' => $processorsPath));
     }
 
