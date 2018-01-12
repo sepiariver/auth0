@@ -38,7 +38,9 @@
 // Options
 $loginResourceId = (int) $modx->getOption('loginResourceId', $scriptProperties, 0);
 $loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
-$requireVerifiedEmail = $modx->getOption('requireVerifiedEmail', $scriptProperties, true);
+$reverify = $modx->getOption('reverify', $scriptProperties, false);
+$logoutOnFailedVerification = $modx->getOption('logoutOnFailedVerification', $scriptProperties, false);
+$tpls['cannotVerifyTpl'] = $modx->getOption('cannotVerifyTpl', $scriptProperties, '@INLINE Cannot verify user. Please contact the system administrator.');
 $tpls['unverifiedEmailTpl'] = $modx->getOption('unverifiedEmailTpl', $scriptProperties, '@INLINE Email verification is required.');
 $tpls['userNotFoundTpl'] = $modx->getOption('userNotFoundTpl', $scriptProperties, '@INLINE User with email [[+email]] not found.');
 $tpls['alreadyLoggedInTpl'] = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
@@ -55,7 +57,6 @@ $auth0Path .= 'model/auth0/';
 // Get Class
 if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path, [
     'redirect_uri' => $auth0_redirect_uri,
-    'requireVerifiedEmail' => $requireVerifiedEmail,
 ]);
 if (!($auth0 instanceof Auth0)) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.login] could not load the required class on line: ' . __LINE__);
@@ -83,7 +84,7 @@ $loginResourceId = abs($loginResourceId);
 $loginResourceUrl = ($loginResourceId) ? $modx->makeUrl($loginResourceId) : false;
 
 // If already logged into current context
-if ($modx->user->hasSessionContext($modx->context->key)) {
+if ($modx->user->hasSessionContext($modx->context->key) && !$reverify) {
     if ($loginResourceUrl) {
         $modx->sendRedirect($loginResourceUrl);
         return;
@@ -96,8 +97,9 @@ if ($modx->user->hasSessionContext($modx->context->key)) {
 $userinfo = $auth0->getUser(true);
 
 // Verify User
-$verifiedState = $auth0->verifyUser();
+$verifiedState = $auth0->verifyUser($reverify);
 if ($verifiedState !== 'verified') {
+    if ($logoutOnFailedVerification) $auth0->logout($loginContexts);
     return $auth0->getChunk($tpls[$verifiedState . 'Tpl'], $userinfo);
 }
 

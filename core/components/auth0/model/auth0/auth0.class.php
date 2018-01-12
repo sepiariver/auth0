@@ -135,20 +135,20 @@ class Auth0
     /**
      * Verify User
      */
-    public function verifyUser()
+    public function verifyUser($reverify = false)
     {
 
-        if (!empty($this->verifiedState)) return $this->verifiedState;
+        if (!empty($this->verifiedState) && !$reverify) return $this->verifiedState;
 
-        // Check email verification
-        if (!$this->userinfo['email_verified'] && $this->getOption('requireVerifiedEmail')) {
-            $this->verifiedState = 'unverifiedEmail';
+        // Need userinfo from Auth0
+        if (!is_array($this->userinfo) || !$this->userinfo['email']) {
+            $this->verifiedState = 'cannotVerify';
             return $this->verifiedState;
         }
 
-        // Need email field from Auth0 user record
-        if (!$this->userinfo['email']) {
-            $this->verifiedState = 'userNotFound';
+        // Require email verification
+        if (!$this->userinfo['email_verified']) {
+            $this->verifiedState = 'unverifiedEmail';
             return $this->verifiedState;
         }
 

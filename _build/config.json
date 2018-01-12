@@ -3,7 +3,7 @@
     "lowCaseName": "auth0",
     "description": "Auth0 integration for MODX CMS.",
     "author": "YJ Tso <info@sepiariver.com>",
-    "version": "0.2.0-dev1",
+    "version": "0.3.0-dev1",
     "package": {
         "elements": {
             "snippets": [{
