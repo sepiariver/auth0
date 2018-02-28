@@ -37,25 +37,24 @@ $auth0UserTpl = $modx->getOption('auth0UserTpl', $scriptProperties, '@INLINE You
 $anonymousTpl = $modx->getOption('anonymousTpl', $scriptProperties, '@INLINE Login required.');
 $debug = $modx->getOption('debug', $scriptProperties, false);
 
+// Expose properties for TPL
+$props = $scriptProperties;
+
 // Paths
 $auth0Path = $modx->getOption('auth0.core_path', null, $modx->getOption('core_path') . 'components/auth0/');
 $auth0Path .= 'model/auth0/';
 
 // Get Class
 if (file_exists($auth0Path . 'auth0.class.php')) $auth0 = $modx->getService('auth0', 'Auth0', $auth0Path);
-if (!($auth0 instanceof Auth0)) {
+if (!($auth0 instanceof Auth0) || !$auth0->init()) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not load the required class on line: ' . __LINE__);
-    return;
+    // MODX session is the record of truth for logged-in state
+    if ($modx->user && $modx->user->hasSessionContext($modx->context->key)) {
+        return $modx->getChunk($loggedInTpl, $props);
+    } else {
+        $modx->sendUnauthorized();
+    }
 }
-
-// Setup
-if (!$auth0->init()) {
-    $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not setup Auth0 on line: ' . __LINE__);
-    return;
-}
-
-// Expose properties for TPL
-$props = $scriptProperties;
 
 // Call for userinfo
 $userinfo = $auth0->getUser($forceLogin);
