@@ -84,7 +84,11 @@ class Auth0
     {
 
         // Init Auth0
-        $this->api = new Auth0\SDK\Auth0($this->options['auth0']);
+        try {
+            $this->api = new Auth0\SDK\Auth0($this->options['auth0']);
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
         if (!$this->api instanceof Auth0\SDK\Auth0) {
 
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load Auth0\SDK\Auth0!');
