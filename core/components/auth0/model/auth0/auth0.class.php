@@ -165,7 +165,7 @@ class Auth0
                 $user = htmlspecialchars_decode($this->userinfo['sub']);
                 $data = ($user) ? $mgmt->users->get($user) : null;
                 if (is_array($data) && !empty($emailKey)) {
-                    $metaEmail = filter_var($data['app_metadata'][$emailKey], FILTER_VALIDATE_EMAIL);
+                    $metaEmail = filter_var(trim($data['app_metadata'][$emailKey]), FILTER_VALIDATE_EMAIL);
                     if ($metaEmail) {
                         $this->userinfo['email'] = $data['app_metadata'][$emailKey];
                         $this->userinfo['email_verified'] = 'app_metadata';
