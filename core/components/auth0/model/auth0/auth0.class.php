@@ -63,7 +63,7 @@ class Auth0
                 'audience' => $this->getOption('audience', $options, ''),
                 'scope' => $this->getOption('scope', $options, 'openid profile email address phone'),
                 'persist_id_token' => $this->getOption('persist_id_token', $options, false),
-                'persist_access_token' => $this->getOption('persist_access_token', $options, true),
+                'persist_access_token' => $this->getOption('persist_access_token', $options, false),
                 'persist_refresh_token' => $this->getOption('persist_refresh_token', $options, false),
             ),
 
