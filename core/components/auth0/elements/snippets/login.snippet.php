@@ -101,6 +101,9 @@ $verifiedState = $auth0->verifyUser($reverify);
 if ($verifiedState !== 'verified') {
     if ($logoutOnFailedVerification) $auth0->logout($loginContexts);
     return $auth0->getChunk($tpls[$verifiedState . 'Tpl'], $userinfo);
+} else {
+    // userinfo may have mutated during verification
+    $userinfo = $auth0->getUser();
 }
 
 // If we got this far, we have a MODX user. Log them in.

@@ -1,8 +1,15 @@
+Auth0 0.4.0-dev1
+****************
+
+Pre-release dev version.
+Support for manual email verification via Auth0 app_metadata
+
 Auth0 0.3.0-dev1
 ****************
 
+Pre-release dev version.
 Improved flow for various verification statuses
-Fixed issue on failure to load class 
+Fixed issue on failure to load class
 
 Auth0 0.2.0-dev1
 ****************
