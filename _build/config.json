@@ -37,7 +37,7 @@
             "value": 0
         }, {
             "key": "persist_access_token",
-            "value": 1
+            "value": 0
         }, {
             "key": "persist_refresh_token",
             "value": 0
