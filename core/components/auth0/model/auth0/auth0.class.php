@@ -63,7 +63,7 @@ class Auth0
                 'audience' => $this->getOption('audience', $options, ''),
                 'scope' => $this->getOption('scope', $options, 'openid profile email address phone'),
                 'persist_id_token' => $this->getOption('persist_id_token', $options, false),
-                'persist_access_token' => $this->getOption('persist_access_token', $options, false),
+                'persist_access_token' => $this->getOption('persist_access_token', $options, true),
                 'persist_refresh_token' => $this->getOption('persist_refresh_token', $options, false),
             ),
 
@@ -145,15 +145,35 @@ class Auth0
         if (!empty($this->verifiedState) && !$reverify) return $this->verifiedState;
 
         // Need userinfo from Auth0
-        if (!is_array($this->userinfo) || !$this->userinfo['email']) {
+        if (!is_array($this->userinfo)) {
             $this->verifiedState = 'cannotVerify';
             return $this->verifiedState;
         }
 
         // Require email verification
-        if (!$this->userinfo['email_verified']) {
-            $this->verifiedState = 'unverifiedEmail';
-            return $this->verifiedState;
+        if (!$this->userinfo['email'] || !$this->userinfo['email_verified']) {
+            try {
+                // Try manually administered app_metadata via Management API
+                $emailKey = $this->getOption('metadata_email_key');
+                $auth = new Auth0\SDK\API\Authentication($this->options['auth0']['domain'], $this->options['auth0']['client_id'], $this->options['auth0']['client_secret']);
+                $creds = $auth->client_credentials([
+                    'audience' => 'https://' . $this->options['auth0']['domain'] . '/api/v2/',
+                    'scope' => 'read:users read:users_app_metadata',
+                ]);
+                $mgmt = new Auth0\SDK\API\Management($creds['access_token'], $this->options['auth0']['domain']);
+                $user = htmlspecialchars_decode($this->userinfo['sub']);
+                if ($user) $data = $mgmt->users->get($user);
+                if (is_array($data) && !empty($data['app_metadata'][$emailKey])) {
+                    $this->userinfo['email'] = $data['app_metadata'][$emailKey];
+                    $this->userinfo['email_verified'] = 'app_metadata';
+                }
+            } catch (Exception $e) {
+                $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+            }
+            if (!$this->userinfo['email'] || !$this->userinfo['email_verified']) {
+                $this->verifiedState = 'unverifiedEmail';
+                return $this->verifiedState;
+            }
         }
 
         // Check MODX User exists
