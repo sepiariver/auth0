@@ -167,7 +167,7 @@ class Auth0
                 if (is_array($data) && !empty($emailKey)) {
                     $metaEmail = filter_var(trim($data['app_metadata'][$emailKey]), FILTER_VALIDATE_EMAIL);
                     if ($metaEmail) {
-                        $this->userinfo['email'] = $data['app_metadata'][$emailKey];
+                        $this->userinfo['email'] = $metaEmail;
                         $this->userinfo['email_verified'] = 'app_metadata';
                     }
                 }
