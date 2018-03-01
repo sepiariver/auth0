@@ -63,7 +63,7 @@ class Auth0
                 'audience' => $this->getOption('audience', $options, ''),
                 'scope' => $this->getOption('scope', $options, 'openid profile email address phone'),
                 'persist_id_token' => $this->getOption('persist_id_token', $options, false),
-                'persist_access_token' => $this->getOption('persist_access_token', $options, false),
+                'persist_access_token' => $this->getOption('persist_access_token', $options, true),
                 'persist_refresh_token' => $this->getOption('persist_refresh_token', $options, false),
             ),
 
@@ -154,18 +154,22 @@ class Auth0
         if (!$this->userinfo['email'] || !$this->userinfo['email_verified']) {
             try {
                 // Try manually administered app_metadata via Management API
+                $domain = $this->options['auth0']['domain'];
                 $emailKey = $this->getOption('metadata_email_key');
-                $auth = new Auth0\SDK\API\Authentication($this->options['auth0']['domain'], $this->options['auth0']['client_id'], $this->options['auth0']['client_secret']);
+                $auth = new Auth0\SDK\API\Authentication($domain, $this->options['auth0']['client_id'], $this->options['auth0']['client_secret']);
                 $creds = $auth->client_credentials([
-                    'audience' => 'https://' . $this->options['auth0']['domain'] . '/api/v2/',
+                    'audience' => 'https://' . $domain . '/api/v2/',
                     'scope' => 'read:users read:users_app_metadata',
                 ]);
-                $mgmt = new Auth0\SDK\API\Management($creds['access_token'], $this->options['auth0']['domain']);
+                $mgmt = new Auth0\SDK\API\Management($creds['access_token'], $domain);
                 $user = htmlspecialchars_decode($this->userinfo['sub']);
-                if ($user) $data = $mgmt->users->get($user);
-                if (is_array($data) && !empty($data['app_metadata'][$emailKey])) {
-                    $this->userinfo['email'] = $data['app_metadata'][$emailKey];
-                    $this->userinfo['email_verified'] = 'app_metadata';
+                $data = ($user) ? $mgmt->users->get($user) : null;
+                if (is_array($data) && !empty($emailKey)) {
+                    $metaEmail = filter_var($data['app_metadata'][$emailKey], FILTER_VALIDATE_EMAIL);
+                    if ($metaEmail) {
+                        $this->userinfo['email'] = $data['app_metadata'][$emailKey];
+                        $this->userinfo['email_verified'] = 'app_metadata';
+                    }
                 }
             } catch (Exception $e) {
                 $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
