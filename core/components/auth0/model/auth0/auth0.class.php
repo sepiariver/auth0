@@ -245,6 +245,22 @@ class Auth0
         ));
     }
 
+    /**
+     * Debugging
+     *
+     */
+    public function debug($properties = [])
+    {
+        $debugInfo = (is_array($properties)) ? print_r($properties, true) : 'Auth0 unknown error on line: ' . __LINE__;
+        if ($properties['debug'] === 'log') {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $debugInfo);
+            return;
+        }
+        if ($properties['debug'] === 'print') {
+            return "<pre>{$debugInfo}</pre>";
+        }
+    }
+
     /* UTILITY METHODS (@theboxer) */
     /**
      * Get a local configuration option or a namespaced system setting by key.

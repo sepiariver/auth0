@@ -35,7 +35,7 @@ $forceLogin = $modx->getOption('forceLogin', $scriptProperties, true);
 $loggedInTpl = $modx->getOption('loggedInTpl', $scriptProperties, '@INLINE You\'re logged in.');
 $auth0UserTpl = $modx->getOption('auth0UserTpl', $scriptProperties, '@INLINE Your Auth0 user isn\'t valid here. Try logging in again.');
 $anonymousTpl = $modx->getOption('anonymousTpl', $scriptProperties, '@INLINE Login required.');
-$debug = $modx->getOption('debug', $scriptProperties, false);
+$debug = $modx->getOption('debug', $scriptProperties, '');
 
 // Expose properties for TPL
 $props = $scriptProperties;
@@ -62,19 +62,32 @@ if ($userinfo) {
     $props = array_merge($props, $userinfo);
 }
 
+// Debug info
+if ($debug) {
+    $props['caller'] = 'auth0.loggedIn';
+    $props['context_key'] = $modx->context->key;
+    if ($modx->resource) $props['resource_id'] = $modx->resource->id;
+}
+
 // Check for session
 if ($modx->user->hasSessionContext($modx->context->key)) {
+    if ($debug) {
+        return $auth0->debug($props);
+    }
     // MODX session is the record of truth for logged-in state
-    if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
     return $auth0->getChunk($loggedInTpl, $props);
 } else {
     if ($userinfo) {
-        // User logged-in to Auth0 but not MODX
-        if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
+        if ($debug) {
+            return $auth0->debug($props);
+        }
+        // User logged-in to Auth0 but not MODX;
         return $auth0->getChunk($auth0UserTpl, $props);
     } else {
+        if ($debug) {
+            return $auth0->debug($props);
+        }
         // User not logged-in to Auth0
-        if ($debug) return '<pre>Line: ' . __LINE__ . PHP_EOL . print_r($props, true) . '</pre>';
         return $auth0->getChunk($anonymousTpl, $props);
     }
 }
