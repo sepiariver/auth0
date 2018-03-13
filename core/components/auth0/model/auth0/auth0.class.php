@@ -23,17 +23,35 @@
 
 class Auth0
 {
+    const STATE_VERIFIED = 'verified';
+    const STATE_USER_NOT_FOUND = 'userNotFound';
+    const STATE_UNVERIFIED_EMAIL = 'unverifiedEmail';
+    const STATE_CANNOT_VERIFY = 'cannotVerify';
+
+    /** @var modX */
     public $modx = null;
+
+    /** @var string  */
     public $namespace = 'auth0';
-    public $options = array();
+
+    /** @var array */
+    public $options = [];
+
+    /** @var \Auth0\SDK\Auth0  */
     protected $api = null;
-    protected $userinfo = null;
-    protected $verifiedState = '';
+
+    /** @var \Auth0\SDK\API\Management */
+    protected $managementApi = null;
+
+    /** @var array */
+    protected $userInfo = [];
+
+    /** @var string string */
+    protected $userState = '';
 
     public function __construct(modX &$modx, array $options = array())
     {
         $this->modx =& $modx;
-        $this->namespace = $this->getOption('namespace', $options, 'auth0');
 
         $corePath = $this->getOption('core_path', $options, $this->modx->getOption('core_path', null, MODX_CORE_PATH) . 'components/auth0/');
         $assetsPath = $this->getOption('assets_path', $options, $this->modx->getOption('assets_path', null, MODX_ASSETS_PATH) . 'components/auth0/');
@@ -55,199 +73,520 @@ class Auth0
             'jsUrl' => $assetsUrl . 'js/',
             'cssUrl' => $assetsUrl . 'css/',
             'connectorUrl' => $assetsUrl . 'connector.php',
-            'auth0' => array(
-                'domain' => $this->getOption('domain', $options, ''),
-                'client_id' => $this->getOption('client_id', $options, ''),
-                'client_secret' => $this->getOption('client_secret', $options, ''),
-                'redirect_uri' => $this->getOption('redirect_uri', $options, ''),
-                'audience' => $this->getOption('audience', $options, ''),
-                'scope' => $this->getOption('scope', $options, 'openid profile email address phone'),
-                'persist_id_token' => $this->getOption('persist_id_token', $options, false),
-                'persist_access_token' => $this->getOption('persist_access_token', $options, true),
-                'persist_refresh_token' => $this->getOption('persist_refresh_token', $options, false),
-            ),
-
         ), $options);
 
+        $this->modx->addPackage('auth0', $this->options['modelPath'], $dbPrefix);
         $this->modx->lexicon->load('auth0:default');
 
-        // Load Auth0
         require_once($this->options['vendorPath'] . 'autoload.php');
-
     }
 
     /**
-     * Create an Auth0 instance
-     *
+     * Create an Auth0 & Management instance
      */
     public function init()
     {
-
-        // Init Auth0
         try {
-            $this->api = new Auth0\SDK\Auth0($this->options['auth0']);
+            $config = [
+                'domain' => $this->getOption('domain', [], ''),
+                'client_id' => $this->getOption('client_id', [], ''),
+                'client_secret' => $this->getOption('client_secret', [], ''),
+                'redirect_uri' => $this->getOption('redirect_uri', [], ''),
+                'audience' => $this->getOption('audience', [], ''),
+                'scope' => $this->getOption('scope', [], 'openid profile email address phone'),
+                'persist_id_token' => $this->getOption('persist_id_token', [], false),
+                'persist_access_token' => $this->getOption('persist_access_token', [], true),
+                'persist_refresh_token' => $this->getOption('persist_refresh_token', [], false),
+            ];
+
+            $this->api = new Auth0\SDK\Auth0($config);
+
+            $auth = new Auth0\SDK\API\Authentication($config['domain'], $config['client_id'], $config['client_secret']);
+            $credentials = $auth->client_credentials([
+                'audience' => 'https://' . $config['domain'] . '/api/v2/',
+                'scope' => 'read:users read:users_app_metadata update:users update:users_app_metadata',
+            ]);
+            $this->managementApi = new Auth0\SDK\API\Management($credentials['access_token'], $config['domain']);
+
         } catch (Exception $e) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
         }
-        if (!$this->api instanceof Auth0\SDK\Auth0) {
+
+        if (!$this->api instanceof Auth0\SDK\Auth0 || !$this->managementApi instanceof Auth0\SDK\API\Management) {
 
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] could not load Auth0\SDK\Auth0!');
             return false;
 
         }
+
         return true;
-
     }
 
     /**
-     * Get userinfo
-     *
+     * Get USer Info
+     * @param bool $forceLogin
+     * @param bool $reVerify
+     * @return array|false
      */
-    public function getUser($forceLogin = false)
+    public function getUser($forceLogin = false, $reVerify = false)
     {
-
-        // Do we already have userinfo?
-        if ($this->userinfo) return $this->userinfo;
-        // Call the api
-        try {
-            $userinfo = $this->api->getUser();
-            $this->userinfo = (is_array($userinfo)) ? array_map('htmlspecialchars', $userinfo) : null;
-            if (!$this->userinfo && $forceLogin) $this->sendToLogin();
-            return $this->userinfo;
-        } catch (Exception $e) {
-            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
-            return null;
-        }
-
-    }
-
-    /**
-     * Send user to Auth0 login screen
-     *
-     */
-    public function sendToLogin() {
+        if ($this->userInfo) return $this->userInfo;
 
         try {
-            $this->api->login();
+            $userInfo = $this->api->getUser();
+            if (empty($userInfo)) {
+                if ($forceLogin) {
+                    $this->api->login();
+                    return false;
+                }
+
+                return false;
+            }
+
+            $this->userInfo = $userInfo;
+
+            $this->getAppMetadata();
+            $this->verifyUser($reVerify);
+
+            return $this->userInfo;
         } catch (Exception $e) {
+            $this->userState = self::STATE_CANNOT_VERIFY;
             $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+
             return false;
         }
-
     }
 
     /**
-     * Verify User
+     * Merge app_metadata to User Info
      */
-    public function verifyUser($reverify = false)
+    protected function getAppMetadata()
     {
+        $this->userInfo['app_metadata'] = [];
 
-        if (!empty($this->verifiedState) && !$reverify) return $this->verifiedState;
+        $userId = htmlspecialchars_decode($this->userInfo['sub']);
+        if (!$userId) return;
+        try {
+            $data = $this->managementApi->users->get($userId);
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
+        if (empty($data) || !is_array($data)) return;
 
-        // Need userinfo from Auth0
-        if (!is_array($this->userinfo)) {
-            $this->verifiedState = 'cannotVerify';
-            return $this->verifiedState;
+        $this->userInfo['app_metadata'] = $data['app_metadata'];
+    }
+
+    /**
+     * Verify User exists in MODX and create one if it doesn't and is allowed by system setting
+     *
+     * @param bool $reVerify
+     * @return string
+     */
+    public function verifyUser($reVerify = false)
+    {
+        if (!empty($this->userState) && !$reVerify) return $this->userState;
+
+        // Need user info from Auth0
+        if (empty($this->userInfo)) {
+            $this->userState = self::STATE_CANNOT_VERIFY;
+            return $this->userState;
         }
 
         // Require email verification
-        if (!$this->userinfo['email'] || !$this->userinfo['email_verified']) {
-            try {
-                // Try manually administered app_metadata via Management API
-                $domain = $this->options['auth0']['domain'];
-                $emailKey = $this->getOption('metadata_email_key');
-                $auth = new Auth0\SDK\API\Authentication($domain, $this->options['auth0']['client_id'], $this->options['auth0']['client_secret']);
-                $creds = $auth->client_credentials([
-                    'audience' => 'https://' . $domain . '/api/v2/',
-                    'scope' => 'read:users read:users_app_metadata',
-                ]);
-                $mgmt = new Auth0\SDK\API\Management($creds['access_token'], $domain);
-                $user = htmlspecialchars_decode($this->userinfo['sub']);
-                $data = ($user) ? $mgmt->users->get($user) : null;
-                if (is_array($data) && !empty($emailKey)) {
-                    $metaEmail = filter_var(trim($data['app_metadata'][$emailKey]), FILTER_VALIDATE_EMAIL);
-                    if ($metaEmail) {
-                        $this->userinfo['email'] = $metaEmail;
-                        $this->userinfo['email_verified'] = 'app_metadata';
-                    }
+        if (!$this->userInfo['email'] || !$this->userInfo['email_verified']) {
+
+            // Try manually administered app_metadata via Management API
+            $emailKey = $this->getOption('metadata_email_key');
+
+            if (!empty($emailKey) && !empty($this->userInfo['app_metadata'][$emailKey])) {
+                $metaEmail = filter_var(trim($this->userInfo['app_metadata'][$emailKey]), FILTER_VALIDATE_EMAIL);
+                if ($metaEmail) {
+                    $this->userInfo['email'] = $metaEmail;
+                    $this->userInfo['email_verified'] = 'app_metadata';
                 }
-            } catch (Exception $e) {
-                $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
             }
-            if (!$this->userinfo['email'] || !$this->userinfo['email_verified']) {
-                $this->verifiedState = 'unverifiedEmail';
-                return $this->verifiedState;
+
+            if (!$this->userInfo['email'] || !$this->userInfo['email_verified']) {
+                $this->userState = self::STATE_UNVERIFIED_EMAIL;
+                return $this->userState;
             }
         }
 
         // Check MODX User exists
         $userExists = $this->modx->getCount('modUser', [
-            'username' => $this->userinfo['email']
+            'username' => $this->userInfo['email']
         ]);
 
         if (!$userExists) {
             /** @var \modUserProfile $profile */
-            $userExists = $this->modx->getCount('modUserProfile', ['email' => $this->userinfo['email']]);
+            $userExists = $this->modx->getCount('modUserProfile', ['email' => $this->userInfo['email']]);
         }
 
         if (!$userExists) {
-            $this->verifiedState = 'userNotFound';
-            return $this->verifiedState;
+            $createUser = (int)$this->getOption('create_user', [], 0);
+            if ($createUser === 1) {
+                if ($this->createUser()) {
+                    $this->userState = self::STATE_VERIFIED;
+                    return $this->userState;
+                }
+            }
+
+            $this->userState = self::STATE_USER_NOT_FOUND;
+            return $this->userState;
         }
 
-        // Verified
-        $this->verifiedState = 'verified';
-        return $this->verifiedState;
+        $this->userState = self::STATE_VERIFIED;
+        return $this->userState;
 
     }
 
     /**
-     * Login MODX User
-     * WARNING: Logs-in any active, unblocked modUser WITHOUT A PASSWORD!
-     * @return modProcessorResponse $response
+     * Creates new User in MODX from Auth0 data
+     *
+     * @return bool
      */
-    public function modxLogin($loginContexts = [], $username = '')
+    protected function createUser()
     {
-        if ($this->verifyUser() !== 'verified') {
+        /** @var modUser $user */
+        $user = $this->modx->newObject('modUser');
+        $user->set('username', $this->userInfo['email']);
+        $user->set('hash_class', 'auth0hash');
+        $user->set('remote_key', $this->userInfo['sub']);
+        $user->setSudo(false);
+
+        /** @var modUserProfile $profile */
+        $profile = $this->modx->newObject('modUserProfile');
+        $profile->set('email', $this->userInfo['email']);
+
+        $user->addOne($profile,'Profile');
+
+        $saved = $user->save();
+
+        if ($saved) {
+            $this->pullUserData($user);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function pullUserData($user) {
+        $pullProfile = (int)$this->getOption('pull_profile');
+        $syncUserGroups = (int)$this->getOption('sync_user_groups');
+        try {
+            $data = $this->managementApi->users->get($this->userInfo['sub']);
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
+        $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
+
+        if ($pullProfile === 1) {
+            $this->pullProfile($user, $appMeta);
+        }
+
+        if ($syncUserGroups === 1) {
+            $this->pullUserGroups($user, $appMeta);
+        }
+    }
+
+    public function pushUserData($id = null, $user = null) {
+        $pushProfile = (int)$this->getOption('push_profile');
+        $syncUserGroups = (int)$this->getOption('sync_user_groups');
+
+        if (empty($id)) {
+            $id = $this->userInfo['sub'];
+        }
+
+        if (empty($user)) {
+            $user = $this->modx->user;
+        }
+        try {
+            $data = $this->managementApi->users->get($id);
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
+        $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
+
+        if ($pushProfile === 1) {
+            $appMeta = $this->pushProfile($appMeta, $id, $user);
+        }
+
+        if ($syncUserGroups === 1) {
+            $appMeta = $this->pushUserGroups($appMeta, $id, $user);
+        }
+
+        try {
+            $this->managementApi->users->update($id, ['app_metadata' => $appMeta]);
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
+    }
+
+    /**
+     * Pulls user profile from Auth0 to the given profile
+     *
+     * @param modUser $user
+     * @param array $appMeta
+     */
+    protected function pullProfile($user, $appMeta)
+    {
+        $profile = $user->Profile;
+        if (!$profile) return;
+
+        if (empty($appMeta)) return;
+
+        if (!empty($appMeta['profile'])) {
+            $profileData = $appMeta['profile'];
+            $profile->fromArray($profileData);
+        }
+
+        $profile->save();
+    }
+
+    /**
+     * Push user profile to the Auth0, if params are not given, current user is used
+     *
+     * @param array $appMeta
+     * @param null|string $id
+     * @param null|modUser $user
+     * @return array
+     */
+    protected function pushProfile($appMeta, $id = null, $user = null)
+    {
+        if (empty($id)) {
+            $id = $this->userInfo['sub'];
+        }
+
+        if (empty($user)) {
+            $user = $this->modx->user;
+        }
+
+        $profile = $user->Profile;
+
+        if (!$profile) return $appMeta;
+        try {
+            $data = $this->managementApi->users->get($id);
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
+        $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
+
+        $appMeta['profile'] = [
+            'fullname' => $profile->fullname,
+            'address' => $profile->address,
+            'city' => $profile->city,
+            'state' => $profile->state,
+            'zip' => $profile->zip,
+            'country' => $profile->country,
+            'mobilephone' => $profile->mobilephone,
+            'phone' => $profile->phone,
+            'fax' => $profile->fax,
+            'website' => $profile->website,
+            'gender' => $profile->gender,
+            'dob' => $profile->dob,
+            'comment' => $profile->comment,
+        ];
+
+        return $appMeta;
+    }
+
+    /**
+     * @param modUser $user
+     * @param array $appMeta
+     */
+    protected function pullUserGroups($user, $appMeta)
+    {
+        $createUserGroups = (int)$this->getOption('create_user_groups');
+
+        if (!empty($appMeta['user_groups'])) {
+            $groups = $appMeta['user_groups'];
+            $currentGroups = $user->getUserGroupNames();
+            $currentGroups = array_flip($currentGroups);
+
+            foreach ($groups as $group) {
+                unset ($currentGroups[$group['group']]);
+
+                if ($createUserGroups === 1) {
+                    $exists = $this->modx->getCount('modUserGroup', [
+                        'name' => $group['group']
+                    ]);
+
+                    if ($exists === 0) {
+                        $newGroup = $this->modx->newObject('modUserGroup');
+                        $newGroup->set('name', $group['group']);
+                        $newGroup->save();
+                    }
+                }
+
+                $user->joinGroup($group['group']);
+            }
+
+            $currentGroups = array_flip($currentGroups);
+            foreach ($currentGroups as $groupToRemove) {
+                $user->leaveGroup($groupToRemove);
+            }
+        }
+    }
+
+    /**
+     * @param array $appMeta
+     * @param null|string $id
+     * @param null|modUser $user
+     * @return array
+     */
+    protected function pushUserGroups($appMeta, $id = null, $user = null)
+    {
+        if (empty($id)) {
+            $id = $this->userInfo['sub'];
+        }
+
+        if (empty($user)) {
+            $user = $this->modx->user;
+        }
+
+        $userGroupNames = $user->getUserGroupNames();
+        $userGroups = [];
+
+        foreach ($userGroupNames as $group) {
+            $userGroups[] = [
+                'group' => $group
+            ];
+        }
+
+        $appMeta['user_groups'] = $userGroups;
+
+        return $appMeta;
+    }
+
+    /**
+     * Logs in user
+     *
+     * @param array $loginContexts
+     * @param bool $forceLogin
+     * @param bool $reVerify
+     * @return bool $response
+     */
+    public function login($loginContexts = [], $forceLogin = true, $reVerify = false)
+    {
+        $this->getUser($forceLogin, $reVerify);
+
+        if ($this->userState !== self::STATE_VERIFIED) {
             return false;
         }
-        $properties = array(
-            'login_context' => array_shift($loginContexts),
-            'add_contexts'  => implode(',', $loginContexts),
-            'username'      => $username,
-        );
-        $processorsPath = $this->getOption('processorsPath');
-        return $this->modx->runProcessor('auth0bypassloginprocessor', $properties, array('processors_path' => $processorsPath));
+
+        $count = $this->modx->getCount('modUserProfile', array(
+            'email' => $this->userInfo['email'],
+        ));
+
+        if ($count > 1) {
+            $criteria = array ('modUser.username' => $this->userInfo['email']);
+        } else {
+            $criteria = array(
+                array('modUser.username' => $this->userInfo['email']),
+                array('OR:Profile.email:=' => $this->userInfo['email'])
+            );
+        }
+
+        /** @var $user modUser */
+        $user = $this->modx->getObjectGraph('modUser', '{"Profile":{},"UserSettings":{}}', $criteria);
+        if (!$user) return false;
+
+        /** @var modUserProfile $profile */
+        $profile = $user->Profile;
+
+        if (empty($user->get('remote_key'))) {
+            $this->pushUserData();
+            $user->set('remote_key', $this->userInfo['sub']);
+            $user->save();
+        } else {
+            $this->pullUserData($user);
+        }
+
+        if (!$user->get('active')) {
+            return false;
+        }
+
+        if ($profile->get('failed_logins') >= $this->modx->getOption('failed_login_attempts') &&
+            $profile->get('blockeduntil') > time()) {
+            return false;
+        }
+
+        if ($profile->get('failedlogincount') >= $this->modx->getOption('failed_login_attempts')) {
+            $profile->set('failedlogincount', 0);
+            $profile->set('blocked', 1);
+            $profile->set('blockeduntil', time() + (60 * $this->modx->getOption('blocked_minutes')));
+            $profile->save();
+        }
+        if ($profile->get('blockeduntil') != 0 && $profile->get('blockeduntil') < time()) {
+            $profile->set('failedlogincount', 0);
+            $profile->set('blocked', 0);
+            $profile->set('blockeduntil', 0);
+            $profile->save();
+        }
+        if ($profile->get('blocked')) {
+            return false;
+        }
+        if ($profile->get('blockeduntil') > time()) {
+            return false;
+        }
+        if ($profile->get('blockedafter') > 0 && $profile->get('blockedafter') < time()) {
+            return false;
+        }
+
+        foreach ($user->UserSettings as $settingPK => $setting) {
+            if ($setting->get('key') == 'allowed_ip') {
+                $ip = $this->modx->request->getClientIp();
+                $ip = $ip['ip'];
+                if (!in_array($ip, explode(',', str_replace(' ', '', $setting->get('value'))))) {
+                    return false;
+                }
+            }
+
+            if ($setting->get('key') == 'allowed_days') {
+                $date = getdate();
+                $day = $date['wday'] + 1;
+                if (strpos($setting->get('value'), "{$day}") === false) {
+                    return false;
+                }
+            }
+        }
+
+        $lifetime = $this->modx->getOption('session_cookie_lifetime', null, 0);
+
+        foreach ($loginContexts as $context) {
+            $user->addSessionContext($context);
+            $_SESSION["modx.{$context}.session.cookie.lifetime"] = $lifetime;
+        }
+
+        $this->modx->user = $user;
+        return true;
     }
 
     /**
      * Logout
      *
+     * @param array $loginContexts
      */
     public function logout($loginContexts = [])
     {
-        $this->modxLogout($loginContexts);
-        $this->api->logout();
-    }
-
-
-    /**
-     * Logout MODX User
-     *
-     */
-    protected function modxLogout($loginContexts = [])
-    {
-        /* send to logout processor and handle response for each context */
         /** @var modProcessorResponse $response */
-        return $this->modx->runProcessor('security/logout',array(
+        $this->modx->runProcessor('security/logout',array(
             'login_context' => array_shift($loginContexts),
             'add_contexts' => implode(',', $loginContexts),
         ));
+        try {
+            $this->api->logout();
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
     }
 
     /**
      * Debugging
      *
+     * @param array $properties
+     * @return string|void
      */
     public function debug($properties = [])
     {
@@ -261,7 +600,6 @@ class Auth0
         }
     }
 
-    /* UTILITY METHODS (@theboxer) */
     /**
      * Get a local configuration option or a namespaced system setting by key.
      *
@@ -287,9 +625,16 @@ class Auth0
         return $option;
     }
 
-    public function explodeAndClean($array = [], $delimiter = ',')
+    /**
+     * Transforms a string to an array with removing duplicates and empty values
+     *
+     * @param $string
+     * @param string $delimiter
+     * @return array
+     */
+    public function explodeAndClean($string, $delimiter = ',')
     {
-        $array = explode($delimiter, $array);     // Explode fields to array
+        $array = explode($delimiter, $string);    // Explode fields to array
         $array = array_map('trim', $array);       // Trim array's values
         $array = array_keys(array_flip($array));  // Remove duplicate fields
         $array = array_filter($array);            // Remove empty values from array
@@ -297,6 +642,13 @@ class Auth0
         return $array;
     }
 
+    /**
+     * Processes a chunk or given string
+     *
+     * @param string $tpl
+     * @param array $phs
+     * @return string
+     */
     public function getChunk($tpl = '', $phs = [])
     {
         if (empty($tpl)) return '';
@@ -313,4 +665,13 @@ class Auth0
         return $this->modx->getChunk($tpl, $phs);
     }
 
+    /**
+     * Returns current user's state
+     *
+     * @return string
+     */
+    public function getUserState()
+    {
+        return $this->userState;
+    }
 }
