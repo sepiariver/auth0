@@ -1,11 +1,11 @@
 <?php
 /**
  * Auth0 plugin for MODX.
- * 
+ *
  * @var modUser $user
  * @var string $mode
  * @var modX $modx
- * 
+ *
  * @package Auth0
  *
  * @author @sepiariver <info@sepiariver.com>
@@ -30,12 +30,10 @@ $corePath = $modx->getOption('auth0.core_path', null, $modx->getOption('core_pat
 /** @var Auth0 $auth0 */
 $auth0 = $modx->getService('auth0', 'Auth0', $corePath . 'model/auth0/', ['core_path' => $corePath]);
 
-if (!($auth0 instanceof Auth0)) {
+if (!($auth0 instanceof Auth0) || !$auth0->init()) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.login] could not load the required class on line: ' . __LINE__);
     return;
 }
-
-$auth0->init();
 
 if ($modx->event->name === 'OnUserSave') {
     if ($mode !== modSystemEvent::MODE_UPD) return;

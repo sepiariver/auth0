@@ -43,6 +43,9 @@ class Auth0
     /** @var \Auth0\SDK\API\Management */
     protected $managementApi = null;
 
+    /** @var \Auth0\SDK\API\Authentication */
+    protected $authApi = null;
+
     /** @var array */
     protected $userInfo = [];
 
@@ -73,6 +76,7 @@ class Auth0
             'jsUrl' => $assetsUrl . 'js/',
             'cssUrl' => $assetsUrl . 'css/',
             'connectorUrl' => $assetsUrl . 'connector.php',
+            'jwtLeeway' => 60,
         ), $options);
 
         $this->modx->addPackage('auth0', $this->options['modelPath'], $dbPrefix);
@@ -101,8 +105,8 @@ class Auth0
 
             $this->api = new Auth0\SDK\Auth0($config);
 
-            $auth = new Auth0\SDK\API\Authentication($config['domain'], $config['client_id'], $config['client_secret']);
-            $credentials = $auth->client_credentials([
+            $this->authApi = new Auth0\SDK\API\Authentication($config['domain'], $config['client_id'], $config['client_secret']);
+            $credentials = $this->authApi->client_credentials([
                 'audience' => 'https://' . $config['domain'] . '/api/v2/',
                 'scope' => 'read:users read:users_app_metadata update:users update:users_app_metadata',
             ]);
@@ -155,6 +159,67 @@ class Auth0
 
             return false;
         }
+    }
+
+    /**
+     * Get User Info from JWT
+     * @param bool $forceLogin
+     * @param bool $reVerify
+     * @return array|false
+     */
+    public function getUserFromJWT($jwt)
+    {
+        // Required
+        $key = $this->getOption('jwt_key');
+        if (empty($key) || empty($jwt)) return false;
+
+        // Check Token
+        $xToken = $this->modx->getCount('Auth0XToken', ['x_token' => $jwt]);
+        if ($xToken !== 0) {
+            $this->modx->log(modX::LOG_LEVEL_INFO, '[Auth0->getUserFromJWT] found x_token: ' . $jwt);
+            return false;
+        }
+
+        // Decode
+        Firebase\JWT\JWT::$leeway = $this->getOption('jwtLeeway');
+        try {
+            $payload = (array) Firebase\JWT\JWT::decode($jwt, $key, ['HS256']);
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+            return false;
+        }
+
+        // Validate
+        if (
+            !is_array($payload) ||
+            empty($payload['email']) ||
+            !filter_var($payload['email'], FILTER_VALIDATE_EMAIL) ||
+            empty($payload['aud']) ||
+            $payload['aud'] !== $this->getOption('client_id') ||
+            empty($payload['exp']) ||
+            empty($payload['sub'])
+        ) {
+            $this->modx->log(modX::LOG_LEVEL_WARN, '[Auth0->getUserFromJWT] received an invalid jwt payload.');
+            return false;
+        }
+
+        // Invalidate Token
+        $invalidated = $this->modx->newObject('Auth0XToken');
+        $invalidated->fromArray([
+            'x_token' => $jwt,
+            'timestamp' => time(),
+            'expires' => $payload['exp'],
+        ]);
+        if (!$invalidated->save()) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0->getUserFromJWT] error saving x_token: ' . $jwt);
+            return false;
+        }
+
+        // Set the userInfo
+        $this->userInfo['email'] = $payload['email'];
+        $this->userInfo['email_verified'] = true;
+        $this->userInfo['sub'] = $payload['sub'];
+        return $this->userInfo;
     }
 
     /**
@@ -469,6 +534,9 @@ class Auth0
      */
     public function login($loginContexts = [], $forceLogin = true, $reVerify = false)
     {
+        if (!is_array($loginContexts)) {
+            $loginContexts = $this->explodeAndClean($loginContexts);
+        }
         $this->getUser($forceLogin, $reVerify);
 
         if ($this->userState !== self::STATE_VERIFIED) {
@@ -634,6 +702,7 @@ class Auth0
      */
     public function explodeAndClean($string, $delimiter = ',')
     {
+        $string = (string) $string;
         $array = explode($delimiter, $string);    // Explode fields to array
         $array = array_map('trim', $array);       // Trim array's values
         $array = array_keys(array_flip($array));  // Remove duplicate fields

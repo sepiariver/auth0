@@ -5,7 +5,7 @@ Auth0 integration for MODX CMS.
 ## Description
 This initial pre-release version is the most basic integration. The auth0.login Snippet calls the Auth0 API using the credentials you provide. Once Auth0 identifies a User by their email address, AND IF a modUser already exists with that email, the auth0.login Snippet adds the chosen MODX Context(s) to the User's session.
 
-As of version 0.5.x, optionally create modUser records and sync with Auth0.
+This package does not create nor modify modUser records. Please see considerations below.
 
 You can read the blog post [here](https://www.sepiariver.ca/blog/modx-web/auth0-for-modx-cms/).
 
@@ -42,10 +42,6 @@ Next, choose the "Connections" tab and ensure you have at least one identity pro
 ![ID providers](https://www.sepiariver.ca/assets/uploads/images/Screenshot%202018-01-08%2018.38.01.png)
 
 This should complete the Auth0 Client App setup.
-
-### Auth0 Management API Setup
-
-@TODO
 
 ### MODX Setup
 

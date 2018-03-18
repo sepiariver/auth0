@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model
+    package="auth0"
+    baseClass="xPDOObject"
+    platform="mysql"
+    defaultEngine="InnoDB"
+    phpdoc-package="auth0"
+    version="1.1">
+    <object
+        class="Auth0XToken"
+        table="auth0_x_tokens"
+        extends="xPDOSimpleObject">
+        <field
+            key="x_token"
+            dbtype="varchar"
+            precision="2000"
+            phptype="string" />
+        <field key="timestamp"
+            dbtype="timestamp"
+            phptype="timestamp"
+            null="false"
+            default="CURRENT_TIMESTAMP" />
+        <field key="expires"
+            dbtype="timestamp"
+            phptype="timestamp"
+            null="true" />
+    </object>
+</model>

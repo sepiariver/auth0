@@ -13,7 +13,7 @@
  *
  * @var modX $modx
  * @var array $scriptProperties
- * 
+ *
  * @package Auth0
  * @author @sepiariver <info@sepiariver.com>
  * Copyright 2018 by YJ Tso
@@ -46,9 +46,9 @@ $corePath = $modx->getOption('auth0.core_path', null, $modx->getOption('core_pat
 /** @var Auth0 $auth0 */
 $auth0 = $modx->getService('auth0', 'Auth0', $corePath . 'model/auth0/', ['core_path' => $corePath]);
 
-if (!($auth0 instanceof Auth0)) {
+if (!($auth0 instanceof Auth0) || !$auth0->init()) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.loggedIn] could not load the required class on line: ' . __LINE__);
-    
+
     // MODX session is the record of truth for logged-in state
     if ($modx->user && $modx->user->hasSessionContext($modx->context->key)) {
         return $modx->getChunk($loggedInTpl, $props);
@@ -57,7 +57,6 @@ if (!($auth0 instanceof Auth0)) {
         return;
     }
 }
-$auth0->init();
 
 // Call for userinfo
 $userInfo = $auth0->getUser($forceLogin);

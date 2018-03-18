@@ -16,9 +16,9 @@
  * &redirect_uri -          (string) Auth0 redirect URI. Default {current Resource's URI}
  * &debug -                 (bool) Enable debug output. Default false
  *
- * @var modX $modx 
+ * @var modX $modx
  * @var array $scriptProperties
- * 
+ *
  * @package Auth0
  * @author @sepiariver <info@sepiariver.com>
  * Copyright 2018 by YJ Tso
@@ -42,12 +42,10 @@ $corePath = $modx->getOption('auth0.core_path', null, $modx->getOption('core_pat
 /** @var Auth0 $auth0 */
 $auth0 = $modx->getService('auth0', 'Auth0', $corePath . 'model/auth0/', ['core_path' => $corePath]);
 
-if (!($auth0 instanceof Auth0)) {
+if (!($auth0 instanceof Auth0) || !$auth0->init()) {
     $modx->log(modX::LOG_LEVEL_ERROR, '[auth0.login] could not load the required class on line: ' . __LINE__);
     return;
 }
-
-$auth0->init();
 
 $loginResourceId = abs(intval($modx->getOption('loginResourceId', $scriptProperties, 0)));
 $loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
@@ -70,7 +68,7 @@ $loginContexts = $modx->context->key . ',' . $loginContexts;
 $loginContexts = $auth0->explodeAndClean($loginContexts);
 
 // If logout param is present
-if (!empty($logoutParam) && $_REQUEST[$logoutParam]) {
+if (!empty($logoutParam) && !empty($_REQUEST[$logoutParam])) {
     $auth0->logout($loginContexts);
 }
 

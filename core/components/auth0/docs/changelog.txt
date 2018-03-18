@@ -1,11 +1,3 @@
-Auth0 0.5.1-dev1
-****************
-
-Pre-release dev version. * Mandatory update.
-Huge code cleanup. Thanks @theboxer for advice and guidance.
-Added plugin to sync user profiles.
-Remove login processor and handle as class method.
-
 Auth0 0.4.0-dev1
 ****************
 
