@@ -141,4 +141,6 @@ Some things to consider:
 
 2. Auth0 has premium features in their paid plans. Are any of those features important for this Extra to support?
 
-Thanks for using MODX and the Auth0 Extra!
+Thanks to @theboxer for all his invaluable advice and guidance. This Extra wouldn't be possible without his input.
+
+Thanks to you, for using MODX and the Auth0 Extra :D 
