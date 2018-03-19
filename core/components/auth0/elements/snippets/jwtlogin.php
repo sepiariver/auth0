@@ -28,8 +28,8 @@
 // OPTIONS
 $loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
 $continueAuth0 = $modx->getOption('continueAuth0', $scriptProperties, true);
-$errorTpl = $modx->getOption('errorTpl', $scriptProperties, '');
-$successTpl = $modx->getOption('successTpl', $scriptProperties, '');
+$errorTpl = $modx->getOption('errorTpl', $scriptProperties, '@INLINE Error logging in.');
+$successTpl = $modx->getOption('successTpl', $scriptProperties, '@INLINE Success.');
 $start = time();
 
 $corePath = $modx->getOption('auth0.core_path', null, $modx->getOption('core_path', null, MODX_CORE_PATH) . 'components/auth0/');

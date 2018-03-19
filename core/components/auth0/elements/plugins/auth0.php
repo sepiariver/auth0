@@ -35,6 +35,8 @@ if (!($auth0 instanceof Auth0) || !$auth0->init()) {
     return;
 }
 
+if (!in_array($modx->event->name, ['OnUserSave', 'OnUserAddToGroup', 'OnUserRemoveFromGroup']) || !($user instanceof modUser)) return;
+
 if ($modx->event->name === 'OnUserSave') {
     if ($mode !== modSystemEvent::MODE_UPD) return;
 }

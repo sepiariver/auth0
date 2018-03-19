@@ -77,6 +77,7 @@ class Auth0
             'cssUrl' => $assetsUrl . 'css/',
             'connectorUrl' => $assetsUrl . 'connector.php',
             'jwtLeeway' => 60,
+            'jwtKeyMinLength' => 32,
         ), $options);
 
         $this->modx->addPackage('auth0', $this->options['modelPath'], $dbPrefix);
@@ -171,7 +172,7 @@ class Auth0
     {
         // Required
         $key = $this->getOption('jwt_key');
-        if (empty($key) || empty($jwt)) return false;
+        if (empty($key) || (strlen($key) < $this->getOption('jwtKeyMinLength')) || empty($jwt)) return false;
 
         // Check Token
         $xToken = $this->modx->getCount('Auth0XToken', ['x_token' => $jwt]);

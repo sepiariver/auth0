@@ -1,3 +1,11 @@
+Auth0 0.6.0-dev2
+****************
+
+Pre-release dev version.
+Support for two-way synchronization of Users and User Groups.
+Huge reorganization of codebase.
+Support for JWT login flow with token invalidation table.
+
 Auth0 0.4.0-dev1
 ****************
 
