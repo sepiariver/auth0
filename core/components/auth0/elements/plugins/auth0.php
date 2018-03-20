@@ -45,4 +45,4 @@ $remoteKey = $user->get('remote_key');
 
 if (empty($remoteKey)) return;
 
-$auth0->pushUserData($remoteKey, $user);
+$auth0->pushUserData($user);

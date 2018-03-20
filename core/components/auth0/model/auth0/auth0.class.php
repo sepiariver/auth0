@@ -338,54 +338,83 @@ class Auth0
     }
 
     public function pullUserData($user) {
-        $pullProfile = (int)$this->getOption('pull_profile');
-        $syncUserGroups = (int)$this->getOption('sync_user_groups');
         try {
+            $pullProfile = (int)$this->getOption('pull_profile');
+            $syncUserGroups = (int)$this->getOption('sync_user_groups');
+        
             $data = $this->managementApi->users->get($this->userInfo['sub']);
+        
+            $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
+    
+            if ($pullProfile === 1) {
+                $this->pullProfile($user, $appMeta);
+            }
+    
+            if ($syncUserGroups === 1) {
+                $this->pullUserGroups($user, $appMeta);
+            }
         } catch (Exception $e) {
-            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
-        }
-        $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
-
-        if ($pullProfile === 1) {
-            $this->pullProfile($user, $appMeta);
-        }
-
-        if ($syncUserGroups === 1) {
-            $this->pullUserGroups($user, $appMeta);
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Failed to pull user data with error: ' . $e->getMessage());
         }
     }
 
-    public function pushUserData($id = null, $user = null) {
-        $pushProfile = (int)$this->getOption('push_profile');
-        $syncUserGroups = (int)$this->getOption('sync_user_groups');
-
-        if (empty($id)) {
-            $id = $this->userInfo['sub'];
-        }
-
+    /**
+     * @param modUser $user
+     */
+    public function pushUserData($user) {
         if (empty($user)) {
-            $user = $this->modx->user;
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] User not given.');
+            return;
         }
+        
+        $remoteKey = $user->remote_key;
+
+        if (empty($remoteKey)) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Remote key to set for user: ' . $user->id . '.');
+            return;
+        }
+        
+        $this->handleUserDataPush($remoteKey, $user);
+    }
+
+    public function pushCurrentUserData()
+    {
+        if (empty($this->modx->user)) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Current user is empty.');
+            return;
+        }
+
+        $remoteKey = $this->modx->user->remote_key;
+
+        if (empty($remoteKey)) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Remote key to set for user: ' . $this->modx->user->id . '.');
+            return;
+        }
+
+        $this->handleUserDataPush($remoteKey, $this->modx->user);
+    }
+    
+    protected function handleUserDataPush($id, $user)
+    {
         try {
+            $pushProfile = (int)$this->getOption('push_profile');
+            $syncUserGroups = (int)$this->getOption('sync_user_groups');
+    
             $data = $this->managementApi->users->get($id);
-        } catch (Exception $e) {
-            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
-        }
-        $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
-
-        if ($pushProfile === 1) {
-            $appMeta = $this->pushProfile($appMeta, $id, $user);
-        }
-
-        if ($syncUserGroups === 1) {
-            $appMeta = $this->pushUserGroups($appMeta, $id, $user);
-        }
-
-        try {
+            
+            $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
+    
+            if ($pushProfile === 1) {
+                $appMeta = $this->pushProfile($appMeta, $id, $user);
+            }
+    
+            if ($syncUserGroups === 1) {
+                $appMeta = $this->pushUserGroups($appMeta, $id, $user);
+            }
+        
             $this->managementApi->users->update($id, ['app_metadata' => $appMeta]);
         } catch (Exception $e) {
-            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Failed to push user data with error: ' . $e->getMessage());
         }
     }
 
@@ -452,6 +481,7 @@ class Auth0
             'gender' => $profile->gender,
             'dob' => $profile->dob,
             'comment' => $profile->comment,
+            'photo' => $profile->photo,
         ];
 
         return $appMeta;
@@ -565,9 +595,9 @@ class Auth0
         $profile = $user->Profile;
 
         if (empty($user->get('remote_key'))) {
-            $this->pushUserData();
             $user->set('remote_key', $this->userInfo['sub']);
             $user->save();
+            $this->pushCurrentUserData();
         } else {
             $this->pullUserData($user);
         }

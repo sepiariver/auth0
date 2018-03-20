@@ -2,7 +2,8 @@ Auth0 0.6.1-dev1
 ****************
 
 Pre-release dev version.
-Minor patch.
+Patch user sync.
+Cleanup files.
 
 Auth0 0.6.0-dev2
 ****************
