@@ -5,11 +5,11 @@ Auth0 integration for MODX CMS.
 ## What does it do?
 
 - Log in to MODX using any/all of the Identify Providers (IdPs) supported by Auth0, such as Google, Facebook, Twitter, Github, Microsoft, Dropbox, and [dozens of others](https://auth0.com/docs/identityproviders), including enterprise services.
-- Synchronize MODX User records, and User Groups, across multiple MODX sites and the Auth0 User database.
+- Synchronize MODX User records, User Groups, and User Settings across multiple MODX sites and the Auth0 User database.
 - Log in to MODX with a one-time-use JWT.
 - Practically any of the [features and use cases](https://auth0.com/docs/getting-started/overview) that Auth0 supports.
 
-In its most basic implementation, the auth0.login Snippet redirects the User to your Auth0 domain's login page, then calls the Auth0 API to identify the User by their verified email address. If a MODX User record exists with that email, the auth0.login Snippet attempts to verify the User against the MODX User records, and if successful, adds the MODX Context(s) specified in the Snippet properties, to the User's session.
+In its most basic implementation, the auth0.login Snippet redirects the User to your Auth0 domain's login page, then calls the Auth0 API to identify the User by their verified email address. The auth0.login Snippet attempts to verify the User against the MODX User records, and if successful, adds the MODX Context(s) specified in the Snippet properties to the User's session.
 
 You can read the blog post [here](https://www.sepiariver.ca/blog/modx-web/auth0-for-modx-cms/).
 
@@ -53,6 +53,12 @@ To enable the user profile sync features, you must authorize your Auth0 Client A
 
 ### MODX System Settings
 
+NOTE: Settings for this Extra can only be set in System Settings. For security reasons, these values cannot be overridden per Context, User Group, or User. In general, to mitigate against privilege escalation, access to CRUD functions for all MODX Settings objects, "executable Elements" like Snippets and Plugins, the Extras Installer, all User management functions, and indeed Manager access (especially in the Administrator User Group) should only be granted on an as-needed basis, and with the highest level of scrutiny.
+
+**Mis-configuration of these Settings can expose critical vulnerabilities in your MODX site.**
+
+_This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details._
+
 #### Area: Auth0
 
 After installing the Auth0 Extra, add the credentials from your Auth0 Client App to the relevant System Settings: "client_id", "client_secret", and "domain". All System Settings will be under the namespace "auth0".
@@ -75,15 +81,19 @@ System Settings "persist_id_token", "persist_access_token", and "persist_refresh
 
 #### Area: Synchronization
 
-The following boolean flags enable or disable synchronization features. **Be careful** when enabling these! It means you trust your Auth0 domain's user registration logic completely.
+The synchronization features are useful for cases where the same User Permissions schemes should be synchronized across multiple MODX installs that are integrated with the same Auth0 tenant domain. Coupled with the JWT login flow, you can deliver a seamless SSO experience for Users across such MODX sites.
+
+The following boolean flags enable or disable synchronization features. **Be careful** when enabling these! It means you trust your Auth0 domain's user registration logic completely, as well as that of any MODX site from which you are pushing data.
 
 - "create_user" enables creation of new MODX User records from Auth0 records.  Newly created Users will not be able to login via MODX, and **MUST** login via Auth0, due to the custom Auth0 hash_class set for such Users. Without any of the following flags enabled, the User would not be added to any User Groups.
 - "sync_user_groups" enables two-way syncing of User Group names between MODX and Auth0. Names of User Groups to sync, must be stored in the "user_groups" property of the User's "app_metadata" object in Auth0.
 - "create_user_groups" enables the creation of User Groups in MODX from Auth0 records, when such User Groups currently do not exist in MODX. The MODX User will be adjoined to these User Groups.
 - "pull_profile" enables updating a MODX User record with data from the "profile" key of the Auth0 User Record's "app_metadata" object.
 - "push_profile" enables updating the "profile" key of the Auth0 User record's "app_metadata" object, with data from the MODX User record.
-
-These synchronization features are useful for cases where the same User Permissions schemes should be synchronized across multiple MODX installs, that are integrated with the same Auth0 tenant domain. Coupled with the JWT login flow, you can deliver a seamless SSO experience for User across such MODX sites.
+- "pull_settings" enables updating MODX User's User Settings with data from the "user_settings" key of the Auth0 User record's "app_metadata" object.
+- "push_settings" enables updating the "user_settings" key of the Auth0 User record's "app_metadata" object, with data from the MODX User's User Settings.
+- "allowed_pull_setting_keys" is a comma-delimited list of User Setting keys to pull from Auth0.
+- "allowed_push_setting_keys" is a comma-delimited list of User Setting keys to push to Auth0.
 
 ### Snippet: auth0.login
 

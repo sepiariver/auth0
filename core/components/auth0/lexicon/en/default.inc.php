@@ -62,6 +62,18 @@ $_lang['setting_auth0.push_profile_desc'] = 'Sync user\'s profile to Auth0';
 $_lang['setting_auth0.pull_profile'] = 'Pull Profile';
 $_lang['setting_auth0.pull_profile_desc'] = 'Sync user\'s profile from Auth0';
 
+$_lang['setting_auth0.push_settings'] = 'Push Settings';
+$_lang['setting_auth0.push_settings_desc'] = 'Sync user\'s settings to Auth0';
+
+$_lang['setting_auth0.pull_settings'] = 'Pull Settings';
+$_lang['setting_auth0.pull_settings_desc'] = 'Sync user\'s settings from Auth0';
+
+$_lang['setting_auth0.allowed_push_setting_keys'] = 'Allowed Push Setting Keys';
+$_lang['setting_auth0.allowed_push_setting_keys_desc'] = 'Allowed settings to push to Auth0';
+
+$_lang['setting_auth0.allowed_pull_setting_keys'] = 'Allowed Pull Setting Keys';
+$_lang['setting_auth0.allowed_pull_setting_keys_desc'] = 'Allowed settings to pull from Auth0';
+
 $_lang['setting_auth0.sync_user_groups'] = 'Sync User Groups';
 $_lang['setting_auth0.sync_user_groups_desc'] = 'Sync user groups to & from Auth0';
 

@@ -1,9 +1,12 @@
-Auth0 0.6.1-dev1
+Auth0 0.7.0-dev2
 ****************
 
 Pre-release dev version.
+** As with all dev releases, updates are mandatory! **
 Patch user sync.
+Add user setting sync.
 Cleanup files.
+Changed some default Settings.
 
 Auth0 0.6.0-dev2
 ****************

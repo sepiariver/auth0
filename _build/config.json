@@ -3,7 +3,7 @@
     "lowCaseName": "auth0",
     "description": "Auth0 integration for MODX CMS.",
     "author": "YJ Tso <info@sepiariver.com>",
-    "version": "0.6.1-dev1",
+    "version": "0.7.0-dev2",
     "package": {
         "elements": {
             "snippets": [{
@@ -97,13 +97,35 @@
                 "key": "push_profile",
                 "area": "sync",
                 "type": "combo-boolean",
-                "value": 1
+                "value": 0
             },
             {
                 "key": "pull_profile",
                 "area": "sync",
                 "type": "combo-boolean",
-                "value": 1
+                "value": 0
+            },
+            {
+                "key": "push_settings",
+                "area": "sync",
+                "type": "combo-boolean",
+                "value": 0
+            },
+            {
+                "key": "pull_settings",
+                "area": "sync",
+                "type": "combo-boolean",
+                "value": 0
+            },
+            {
+                "key": "allowed_push_setting_keys",
+                "area": "sync",
+                "value": ""
+            },
+            {
+                "key": "allowed_pull_setting_keys",
+                "area": "sync",
+                "value": ""
             },
             {
                 "key": "sync_user_groups",

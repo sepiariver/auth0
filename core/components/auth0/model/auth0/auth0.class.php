@@ -27,6 +27,7 @@ class Auth0
     const STATE_USER_NOT_FOUND = 'userNotFound';
     const STATE_UNVERIFIED_EMAIL = 'unverifiedEmail';
     const STATE_CANNOT_VERIFY = 'cannotVerify';
+    const SETTING_DOT_REPLACEMENT = '--';
 
     /** @var modX */
     public $modx = null;
@@ -93,15 +94,15 @@ class Auth0
     {
         try {
             $config = [
-                'domain' => $this->getOption('domain', [], ''),
-                'client_id' => $this->getOption('client_id', [], ''),
-                'client_secret' => $this->getOption('client_secret', [], ''),
-                'redirect_uri' => $this->getOption('redirect_uri', [], ''),
-                'audience' => $this->getOption('audience', [], ''),
-                'scope' => $this->getOption('scope', [], 'openid profile email address phone'),
-                'persist_id_token' => $this->getOption('persist_id_token', [], false),
-                'persist_access_token' => $this->getOption('persist_access_token', [], true),
-                'persist_refresh_token' => $this->getOption('persist_refresh_token', [], false),
+                'domain' => $this->getSystemSetting('domain', ''),
+                'client_id' => $this->getSystemSetting('client_id', ''),
+                'client_secret' => $this->getSystemSetting('client_secret', ''),
+                'redirect_uri' => $this->getSystemSetting('redirect_uri', ''),
+                'audience' => $this->getSystemSetting('audience', ''),
+                'scope' => $this->getSystemSetting('scope', 'openid profile email address phone'),
+                'persist_id_token' => $this->getSystemSetting('persist_id_token', false),
+                'persist_access_token' => $this->getSystemSetting('persist_access_token', true),
+                'persist_refresh_token' => $this->getSystemSetting('persist_refresh_token', false),
             ];
 
             $this->api = new Auth0\SDK\Auth0($config);
@@ -171,7 +172,7 @@ class Auth0
     public function getUserFromJWT($jwt)
     {
         // Required
-        $key = $this->getOption('jwt_key');
+        $key = $this->getSystemSetting('jwt_key');
         if (empty($key) || (strlen($key) < $this->getOption('jwtKeyMinLength')) || empty($jwt)) return false;
 
         // Check Token
@@ -289,7 +290,7 @@ class Auth0
         }
 
         if (!$userExists) {
-            $createUser = (int)$this->getOption('create_user', [], 0);
+            $createUser = (int)$this->getSystemSetting('create_user');
             if ($createUser === 1) {
                 if ($this->createUser()) {
                     $this->userState = self::STATE_VERIFIED;
@@ -339,17 +340,22 @@ class Auth0
 
     public function pullUserData($user) {
         try {
-            $pullProfile = (int)$this->getOption('pull_profile');
-            $syncUserGroups = (int)$this->getOption('sync_user_groups');
-        
+            $pullProfile = (int)$this->getSystemSetting('pull_profile');
+            $pullSettings = (int)$this->getSystemSetting('pull_settings');
+            $syncUserGroups = (int)$this->getSystemSetting('sync_user_groups');
+
             $data = $this->managementApi->users->get($this->userInfo['sub']);
-        
+
             $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
-    
+
             if ($pullProfile === 1) {
                 $this->pullProfile($user, $appMeta);
             }
-    
+
+            if ($pullSettings === 1) {
+                $this->pullSettings($user, $appMeta);
+            }
+
             if ($syncUserGroups === 1) {
                 $this->pullUserGroups($user, $appMeta);
             }
@@ -366,14 +372,14 @@ class Auth0
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] User not given.');
             return;
         }
-        
+
         $remoteKey = $user->remote_key;
 
         if (empty($remoteKey)) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Remote key to set for user: ' . $user->id . '.');
             return;
         }
-        
+
         $this->handleUserDataPush($remoteKey, $user);
     }
 
@@ -393,25 +399,30 @@ class Auth0
 
         $this->handleUserDataPush($remoteKey, $this->modx->user);
     }
-    
+
     protected function handleUserDataPush($id, $user)
     {
         try {
-            $pushProfile = (int)$this->getOption('push_profile');
-            $syncUserGroups = (int)$this->getOption('sync_user_groups');
-    
+            $pushProfile = (int)$this->getSystemSetting('push_profile');
+            $pushSettings = (int)$this->getSystemSetting('push_settings');
+            $syncUserGroups = (int)$this->getSystemSetting('sync_user_groups');
+
             $data = $this->managementApi->users->get($id);
-            
+
             $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
-    
+
             if ($pushProfile === 1) {
                 $appMeta = $this->pushProfile($appMeta, $id, $user);
             }
-    
+
+            if ($pushSettings === 1) {
+                $appMeta = $this->pushSettings($appMeta, $id, $user);
+            }
+
             if ($syncUserGroups === 1) {
                 $appMeta = $this->pushUserGroups($appMeta, $id, $user);
             }
-        
+
             $this->managementApi->users->update($id, ['app_metadata' => $appMeta]);
         } catch (Exception $e) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Failed to push user data with error: ' . $e->getMessage());
@@ -437,6 +448,43 @@ class Auth0
         }
 
         $profile->save();
+    }
+
+    /**
+     * Pulls user settings from Auth0 to the given user
+     *
+     * @param modUser $user
+     * @param array $appMeta
+     */
+    protected function pullSettings($user, $appMeta)
+    {
+        if (!($user instanceof modUser)) return;
+
+        if (empty($appMeta)) return;
+
+        $allowed = $this->getSystemSetting('allowed_pull_setting_keys');
+        if (empty($allowed)) return;
+        $allowed = $this->explodeAndClean($allowed);
+        if (!is_array($allowed)) return;
+
+        if (!empty($appMeta['user_settings'])) {
+            foreach ($appMeta['user_settings'] as $key => $fields) {
+                $key = $this->prepareKey($key, 'pull');
+                if (!in_array($key, $allowed)) continue;
+                unset($fields['user'], $fields['key']);
+                $c = [
+                    'user' => $user->get('id'),
+                    'key' => $key
+                ];
+                $setting = $this->modx->getObject('modUserSetting', $c);
+                if (!$setting) {
+                    $setting = $this->modx->newObject('modUserSetting');
+                    $fields = array_merge($fields, $c);
+                }
+                $setting->fromArray($fields, '', true); // set PKs
+                $setting->save();
+            }
+        }
     }
 
     /**
@@ -488,12 +536,61 @@ class Auth0
     }
 
     /**
+     * Push user settings to Auth0, if params are not given, current user is used
+     *
+     * @param array $appMeta
+     * @param null|string $id
+     * @param null|modUser $user
+     * @return array
+     */
+    protected function pushSettings($appMeta, $id = null, $user = null)
+    {
+        if (empty($id)) {
+            $id = $this->userInfo['sub'];
+        }
+
+        if (empty($user)) {
+            $user = $this->modx->user;
+        }
+
+        if (!$user->id) return $appMeta;
+
+        $allowed = $this->getSystemSetting('allowed_push_setting_keys');
+        if (empty($allowed)) return $appMeta;
+        $allowed = $this->explodeAndClean($allowed);
+        if (!is_array($allowed)) return $appMeta;
+
+        try {
+            $data = $this->managementApi->users->get($id);
+            $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
+            $appMeta['user_settings'] = is_array($appMeta['user_settings']) ? $appMeta['user_settings'] : [];
+
+            $settings = $this->modx->getCollection('modUserSetting', [
+                'user' => $user->id,
+                'key:IN' => $allowed,
+            ]);
+
+            foreach ($settings as $setting) {
+                $fields = $setting->toArray();
+                $key = $this->prepareKey($fields['key'], 'push');
+                unset($fields['user'], $fields['key']);
+                $appMeta['user_settings'][$key] = $fields;
+            }
+
+        } catch (Exception $e) {
+            $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
+        }
+
+        return $appMeta;
+    }
+
+    /**
      * @param modUser $user
      * @param array $appMeta
      */
     protected function pullUserGroups($user, $appMeta)
     {
-        $createUserGroups = (int)$this->getOption('create_user_groups');
+        $createUserGroups = (int)$this->getSystemSetting('create_user_groups');
 
         if (!empty($appMeta['user_groups'])) {
             $groups = $appMeta['user_groups'];
@@ -722,6 +819,43 @@ class Auth0
             }
         }
         return $option;
+    }
+
+    /**
+     * Get a namespaced system setting directly from the modSystemSetting table.
+     * Does not allow cascading Context, User Group, nor User settings, like the name suggests.
+     *
+     * @param string $key The option key to search for.
+     * @param mixed $default The default value returned if the option is not found as a
+     * namespaced system setting; by default this value is ''.
+     * @return mixed The option value or the default value specified.
+     */
+    protected function getSystemSetting($key = '', $default = '')
+    {
+        if (empty($key)) return $default;
+        $query = $this->modx->newQuery('modSystemSetting', [
+            'key' => "{$this->namespace}.{$key}",
+        ]);
+        $query->select('value');
+        $value = $this->modx->getValue($query->prepare());
+        if ($value === false || $value === null) $value = $default;
+        return $value;
+    }
+
+    /**
+     * Prepare settings to sync with Auth0
+     *
+     * @param string $string
+     * @param string $action ('push'|'pull')
+     * @return string
+     */
+    protected function prepareKey($string, $action)
+    {
+        $string = (string) $string;
+        if ($action === 'push') return str_replace('.', self::SETTING_DOT_REPLACEMENT, $string);
+        if ($action === 'pull') return str_replace(self::SETTING_DOT_REPLACEMENT, '.', $string);
+        $this->modx->log(modX::LOG_LEVEL_DEBUG, '[Auth0->prepareKey] invalid action.');
+        return '';
     }
 
     /**
