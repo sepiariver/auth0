@@ -1,6 +1,9 @@
+Auth0 1.0.0-beta1
+****************
+Beta release.
+
 Auth0 0.7.0-dev2
 ****************
-
 Pre-release dev version.
 ** As with all dev releases, updates are mandatory! **
 Patch user sync.
@@ -10,7 +13,6 @@ Changed some default Settings.
 
 Auth0 0.6.0-dev2
 ****************
-
 Pre-release dev version.
 Support for two-way synchronization of Users and User Groups.
 Huge reorganization of codebase.
@@ -18,30 +20,25 @@ Support for JWT login flow with token invalidation table.
 
 Auth0 0.4.0-dev1
 ****************
-
 Pre-release dev version.
 Support for manual email verification via Auth0 app_metadata
 
 Auth0 0.3.0-dev1
 ****************
-
 Pre-release dev version.
 Improved flow for various verification statuses
 Fixed issue on failure to load class
 
 Auth0 0.2.0-dev1
 ****************
-
 Pre-release version.
 Better code organization.
 
 Auth0 0.1.0-dev1
 ****************
-
 Pre-release version.
 Better login/logout of modUser.
 
 Auth0 0.0.1-dev1
 ****************
-
 Initial pre-release version.

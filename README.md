@@ -11,7 +11,7 @@ Auth0 integration for MODX CMS.
 
 In its most basic implementation, the auth0.login Snippet redirects the User to your Auth0 domain's login page, then calls the Auth0 API to identify the User by their verified email address. The auth0.login Snippet attempts to verify the User against the MODX User records, and if successful, adds the MODX Context(s) specified in the Snippet properties to the User's session.
 
-You can read the blog post [here](https://www.sepiariver.ca/blog/modx-web/auth0-for-modx-cms/).
+You can read the blog post [here](https://sepiariver.com/modx/auth0-for-modx-cms/).
 
 ## Installation
 
@@ -25,25 +25,25 @@ Go to [auth0.com](https://auth0.com) and register an account. A generous "free" 
 
 Once signed-in to the dashboard at [https://manage.auth0.com/](https://manage.auth0.com/) click the "New Client" button.
 
-![new client](https://www.sepiariver.ca/assets/uploads/images/Screenshot%202018-01-08%2018.25.37.png)
+![new client](https://sepiariver.com/assets/uploads/images/Screenshot%202018-01-08%2018.25.37.png)
 
 Give your Client App a name, select the option "Regular Web Applications" and click "Create".
 
-![create client](https://www.sepiariver.ca/assets/uploads/images/Screenshot%202018-01-08%2018.27.32.png)
+![create client](https://sepiariver.com/assets/uploads/images/Screenshot%202018-01-08%2018.27.32.png)
 
 In the "Settings" tab of your new Client App, copy the "Domain", "Client ID" and "Client Secret" into the relevant System Settings in your MODX install. (See below under "MODX Setup")
 
-![credentials](https://www.sepiariver.ca/assets/uploads/images/Screenshot%202018-01-08%2018.29.10.png)
+![credentials](https://sepiariver.com/assets/uploads/images/Screenshot%202018-01-08%2018.29.10.png)
 
 Scroll down the Client App settings view to configure at least one "Allowed Callback URL". This is usually the URL of the Resource on which you call the "auth0.login" Snippet.
 
-![url configs](https://www.sepiariver.ca/assets/uploads/images/Screenshot%202018-01-08%2018.36.10.png)
+![url configs](https://sepiariver.com/assets/uploads/images/Screenshot%202018-01-08%2018.36.10.png)
 
 Other configs are optional. Scroll to the bottom and click "Save Changes".
 
 Next, choose the "Connections" tab and ensure you have at least one identity provider selected.
 
-![ID providers](https://www.sepiariver.ca/assets/uploads/images/Screenshot%202018-01-08%2018.38.01.png)
+![ID providers](https://sepiariver.com/assets/uploads/images/Screenshot%202018-01-08%2018.38.01.png)
 
 This should complete the Auth0 Client App setup.
 
@@ -63,7 +63,7 @@ _This program is distributed in the hope that it will be useful, but WITHOUT ANY
 
 After installing the Auth0 Extra, add the credentials from your Auth0 Client App to the relevant System Settings: "client_id", "client_secret", and "domain". All System Settings will be under the namespace "auth0".
 
-![system settings](https://www.sepiariver.ca/assets/uploads/images/Screenshot%202018-01-08%2018.33.17.png)
+![system settings](https://sepiariver.com/assets/uploads/images/Screenshot%202018-01-08%2018.33.17.png)
 
 The "audience" setting will be your Auth0 domain `/userinfo`. For example: `https://example.auth0.com/userinfo`
 
@@ -143,7 +143,7 @@ Pushes user data to Auth0 if the relevant System Settings are enabled.
 
 ## Considerations
 
-This Extra is a work-in-progress. The code is managed [on Github](https://github.com/sepiariver/auth0). Feel free to start [Issue threads](https://github.com/sepiariver/auth0) to discuss and contribute to the roadmap.
+v1.0+ has been tested in production, however this Extra is still a work-in-progress. The code is managed [on Github](https://github.com/sepiariver/auth0). Feel free to start [Issue threads](https://github.com/sepiariver/auth0) to discuss and contribute to the roadmap.
 
 Some things to consider:
 
