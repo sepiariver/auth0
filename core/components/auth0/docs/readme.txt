@@ -110,6 +110,14 @@ This Snippet has the following options:
 - &redirect_uri -          (string) Auth0 redirect URI. Default {current Resource's URI}
 - &debug -                 (bool) Enable debug output. Default false
 
+### Snippet: auth0.logout
+
+This Snippet has the following options:
+
+- &logoutResourceId -       (int) ID of Resource to redirect user on logout. Default 0 (no redirect)
+- &logoutContexts -         (string) CSV of context keys, to logout user (in addition to current context). Default ''
+- &debug -                 (bool) Enable debug output. Default false
+
 ### Snippet: auth0.loggedIn
 
 Tests for logged-in state and provides options for what to render in each scenario:
