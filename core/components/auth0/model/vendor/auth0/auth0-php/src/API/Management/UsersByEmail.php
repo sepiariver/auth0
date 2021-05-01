@@ -4,9 +4,9 @@ namespace Auth0\SDK\API\Management;
 
 class UsersByEmail extends GenericResource
 {
-    public function get($params = array())
+    public function get($params = [])
     {
-        $client = $this->apiClient->get()
+        $client = $this->apiClient->method('get')
             ->addPath('users-by-email');
 
         foreach ($params as $param => $value) {

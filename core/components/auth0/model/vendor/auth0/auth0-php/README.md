@@ -1,299 +1,251 @@
-# Auth0 PHP SDK
+<p align="center"><a href="https://auth0.com" target="_blank"><img src=".github/logo.svg?sanitize=true&raw=true" width="300"></a></p>
 
-[![Latest Stable Version](https://poser.pugx.org/auth0/auth0-php/v/stable)](https://packagist.org/packages/auth0/auth0-php)
-[![Build Status](https://travis-ci.org/auth0/auth0-PHP.png)](https://travis-ci.org/auth0/auth0-PHP)
-[![Code Climate](https://codeclimate.com/github/auth0/auth0-PHP/badges/gpa.svg)](https://codeclimate.com/github/auth0/auth0-PHP)
-[![Test Coverage](https://codeclimate.com/github/auth0/auth0-PHP/badges/coverage.svg)](https://codeclimate.com/github/auth0/auth0-PHP/coverage)
-[![Dependencies](https://www.versioneye.com/php/auth0:auth0-php/badge.svg)](https://www.versioneye.com/php/auth0:auth0-php)
-[![HHVM Status](http://hhvm.h4cc.de/badge/auth0/auth0-php.svg)](http://hhvm.h4cc.de/package/auth0/auth0-php)
-[![License](https://poser.pugx.org/auth0/auth0-php/license)](https://packagist.org/packages/auth0/auth0-php)
-[![Total Downloads](https://poser.pugx.org/auth0/auth0-php/downloads)](https://packagist.org/packages/auth0/auth0-php)
+<p align="center">
+<a href="https://circleci.com/gh/auth0/auth0-PHP"><img src="https://img.shields.io/circleci/project/github/auth0/auth0-PHP/master.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/auth0/auth0-PHP"><img src="https://img.shields.io/packagist/dt/auth0/auth0-PHP" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/auth0/auth0-PHP"><img src="https://img.shields.io/packagist/v/auth0/auth0-PHP?label=stable" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/auth0/auth0-PHP"><img src="https://img.shields.io/packagist/php-v/auth0/auth0-php" alt="PHP Support"></a>
+<a href="https://codecov.io/gh/auth0/auth0-PHP"><img src="https://codecov.io/gh/auth0/auth0-PHP/branch/master/graph/badge.svg" alt="Code Coverage"></a>
+<a href="https://packagist.org/packages/auth0/auth0-PHP"><img src="https://img.shields.io/packagist/l/auth0/auth0-php" alt="License"></a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2Fauth0-PHP?ref=badge_shield"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2Fauth0-PHP.svg?type=shield" alt="FOSSA"></a>
+</p>
+
+Auth0 enables you to rapidly integrate authentication and authorization for your applications, so you can focus on your core business. ([Learn more](https://auth0.com/why-auth0))
+
+Our PHP SDK provides a straight-forward and rigorously tested interface for accessing Auth0's Authentication and Management API endpoints through modern releases of PHP.
+
+This is [one of many libraries we offer](https://auth0.com/docs/libraries) supporting numerous platforms.
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+  - [Authentication API](#authentication-api)
+  - [Management API](#management-api)
+- [Examples](#examples)
+  - [Organizations (Closed Beta)](#organizations-closed-beta)
+    - [Logging in with an Organization](#logging-in-with-an-organization)
+    - [Accepting user invitations](#accepting-user-invitations)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Support + Feedback](#support--feedback)
+- [Vulnerability Reporting](#vulnerability-reporting)
+- [What is Auth0?](#what-is-auth0)
+- [License](#license)
+
+## Requirements
+
+- PHP 7.3+ / 8.0+
+- [Composer](https://getcomposer.org/)
 
 ## Installation
 
-Installing via composer
+The recommended way to install the SDK is through [Composer](https://getcomposer.org/):
 
-```
+```bash
 $ composer require auth0/auth0-php
 ```
 
-Check our docs page to get a complete guide on how to install it in an existing project or download a pre configured seedproject:
+Guidance on setting up Composer and alternative installation methods can be found in our [documentation](https://auth0.com/docs/libraries/auth0-php#installation).
 
-* Regular webapp: https://auth0.com/docs/quickstart/webapp/php/
-* Web API: https://auth0.com/docs/quickstart/backend/php/
+## Getting Started
 
-> If you find something wrong in our docs, PR are welcome in our docs repo: https://github.com/auth0/docs
+To get started, you'll need to create a [free Auth0 account](https://auth0.com/signup) and register an [Application](https://auth0.com/docs/applications).
 
-## Getting started
+### Authentication API
 
-### Decoding and verifying tokens
-
-```php
-// HS256 tokens
-use Auth0\SDK\JWTVerifier;
-
-$verifier = new JWTVerifier([
-    'valid_audiences' => [$client_id],
-    'client_secret' => $client_secret
-]);
-
-$decoded = $verifier->verifyAndDecode($jwt);
-
-// RS256 tokens
-$verifier = new JWTVerifier([
-    'supported_algs' => ['RS256'],
-    'valid_audiences' => [$client_id],
-    'authorized_iss' => ["https://$domain/"] // the issues will look like https://your_account[.region].auth0.com/ (being region an optional segment only present for eu and au accounts.
-]);
-
-$decoded = $verifier->verifyAndDecode($jwt);
-
-```
-
-Accepted params:
-- **cache**: Receives an instance of `Auth0\SDK\Helpers\Cache\CacheHandler` (Supported `FileSystemCacheHandler` and `NoCacheHandler`). Defaults to `NoCacheHandler`.
-- **guzzle_options**: Configuration propagated to guzzle when fetching the JWKs.
-- **supported_algs**: `RS256` and `HS256` supported. Defaults to `HS256`.
-- **valid_audiences**: List of audiences that identifies the API (usefull for multitenant environments).
-- **authorized_iss**: List of issues authorized to sign tokens for the API.
-- **client_secret**: Client secret used to verify the token signature (only for `HS256`).
-- **secret_base64_encoded**: When `true`, it will decode the secret used to verify the token signature. Defaults to `true` (used only for `HS256`).
-
-### Oauth2 authentication
+Begin by instantiating the SDK and passing the relevant details from your Application's settings page:
 
 ```php
-require __DIR__ . '/vendor/autoload.php';
-
 use Auth0\SDK\Auth0;
 
-$domain        = 'YOUR_NAMESPACE';
-$client_id     = 'YOUR_CLIENT_ID';
-$client_secret = 'YOUR_CLIENT_SECRET';
-$redirect_uri  = 'http://YOUR_APP/callback';
-
 $auth0 = new Auth0([
-  'domain' => $domain,
-  'client_id' => $client_id,
-  'client_secret' => $client_secret,
-  'redirect_uri' => $redirect_uri,
-  'audience' => 'urn:test:api',
-  'persist_id_token' => true,
-  'persist_access_token' => true,
-  'persist_refresh_token' => true,
+  // The values below are found on the Application settings tab.
+  'domain'        => '{YOUR_TENANT}.auth0.com',
+  'client_id'     => '{YOUR_APPLICATION_CLIENT_ID}',
+  'client_secret' => '{YOUR_APPLICATION_CLIENT_SECRET}',
+
+  // This is your application URL that will be used to process the login.
+  // Save this URL in the "Allowed Callback URLs" field on the Application settings tab
+  'redirect_uri' => 'https://{YOUR_APPLICATION_CALLBACK_URL}',
 ]);
+```
 
-$userInfo = $auth0->getUser();
+**Note:** _In a production application you should never hardcode these values. Consider using environment variables to store and pass these values to your application, as suggested in our [documentation](https://auth0.com/docs/libraries/auth0-php#getting-started)._
 
-if (!$userInfo) {
-    $auth0->login();
+Using the SDK, making requests to Auth0's endpoints couldn't be simpler. For example, signing users in using Auth0's [Universal Login](https://auth0.com/docs/universal-login) and retrieving user details can be done in a few lines of code:
+
+```php
+// Do we have an authenticated session available?
+if ($user = $auth0->getUser()) {
+  // Output the authenticated user
+  print_r($user);
+  exit;
 }
 
-var_dump($profile);
+// No session was available, so redirect to Universal Login page
+$auth0->login();
 ```
 
-> For more info, check the quickstart docs for [Regular webapp](https://auth0.com/docs/quickstart/webapp/php/) and [Web API](https://auth0.com/docs/quickstart/backend/php/).
+Further examples of how you can use the Authentication API Client can be found on [our documentation site](https://auth0.com/docs/libraries/auth0-php/).
 
-### Calling the management API
+### Management API
+
+This SDK also offers an interface for Auth0's Management API which, in order to access, requires an Access Token that is issued specifically for your tenant's Management API by specifying the corresponding Audience.
+
+The process for retrieving such an Access Token is described in our [documentation](https://auth0.com/docs/libraries/auth0-php/using-the-management-api-with-auth0-php).
 
 ```php
-require __DIR__ . '/vendor/autoload.php';
-
 use Auth0\SDK\API\Management;
 
-$token = "eyJhbGciO....eyJhdWQiOiI....1ZVDisdL...";
-$domain = "account.auth0.com";
-
-$auth0Api = new Management($token, $domain);
-
-$usersList = $auth0Api->users->search([ "q" => "email@test.com" ]);
-
-var_dump($usersList);
+$mgmt_api = new Management('{YOUR_ACCESS_TOKEN}', 'https://{YOUR_TENANT}.auth0.com');
 ```
 
-### Calling the Authentication API
+The SDK provides convenient interfaces to the Management API's endpoints. For example, to search for users:
 
 ```php
-require __DIR__ . '/vendor/autoload.php';
+$results = $mgmt_api->users()->getAll([
+  'q' => 'josh'
+]);
 
-use Auth0\SDK\API\Authentication;
+if (! empty($results)) {
+  echo '<h2>User Search</h2>';
 
-$domain = "account.auth0.com";
-$client_id = '...';
-$client_secret = '...'; // This is optional, only needed for code exchange and impersonation api
-
-$auth0Api = new Authentication($domain, $client_id, $client_secret);
-
-// getting an access token with client credentials grant
-$access_token = $auth0Api->client_credentials([
-        'audience' => 'urn:test:api',
-        'scope' => 'do:something read:somethingelse',
-    ]);
-
-// getting an access token with password realm grant
-$access_token = $auth0Api->login([
-        'username' => 'someone@example.com',
-        'password' => 'shh',
-        'realm' => 'Username-Password-Authentication',
-    ]);
+  foreach ($results as $datum) {
+    printf(
+      '<p><strong>%s</strong> &lt;%s&gt; - %s</p>',
+      !empty($datum['nickname']) ? $datum['nickname'] : 'No nickname',
+      !empty($datum['email']) ? $datum['email'] : 'No email',
+      $datum['user_id']
+    );
+  }
+}
 ```
 
-## Troubleshoot
-
-> I am getting `curl error 60: SSL certificate problem: self signed certificate in certificate chain` on Windows
-
-This is a common issue with latest PHP versions under windows (related to a incompatibility between windows and openssl CAs database).
-
-- download this CAs database `https://curl.haxx.se/ca/cacert.pem` to `c:/cacert.pem`
-- you need to edit your php.ini and add `openssl.cafile=c:/cacert.pem` (it should point to the file you downloaded)
-
-> I am not using composer, my host does not allow using Composer
-
-This package uses composer for mantianing dependencies. However, if you cannot use composer on your server. Please follow the following steps and upload these dependencies manually.
-
-- Download and install composer on your local environment.
-- Install auth0-PHP using composer.
-- Once you have everything working upload your scripts to the host along with the vendor folder.
-
-
-## News
-
-- The version 2.x of the PHP SDK was updated to work with Guzzle 6.1. For compatibility with Guzzle 5, you should use 1.x branch.
-- The version 1.x of the PHP SDK now works with the Auth API v2 which adds lots of new [features and changes](https://auth0.com/docs/apiv2Changes).
-
-### *NOTICE* Backward compatibility breaks
-
-#### 4.0
-
-- Soon to deprecate the following clases:
-    + Auth0\SDK\Auth0Api: use \Auth0\SDK\API\Management instead
-    + Auth0\SDK\Auth0AuthApi: use \Auth0\SDK\API\Authentication instead
-    + Auth0\SDK\Auth0JWT: Use \Auth0\SDK\JWTVerifier instead
-
-#### 3.2
-- Now the SDK supports RS256 codes, it will decode using the `.well-known/jwks.json` endpoint to fetch the public key
-
-#### 3.x
-
-- SDK api changes, now the Auth0 API client is not build of static clases anymore. Usage example:
-```php
-$token = "eyJhbGciO....eyJhdWQiOiI....1ZVDisdL...";
-$domain = "account.auth0.com";
-$guzzleOptions = [ ... ];
-
-$auth0Api = new \Auth0\SDK\Auth0Api($token, $domain, $guzzleOptions); /* $guzzleOptions is optional */
-
-$usersList = $auth0Api->users->search([ "q" => "email@test.com" ]);
-```
-
-#### 2.2
-- Now the SDK fetches the user using the `tokeninfo` endpoint to be fully compliant with the openid spec
-- Now the SDK supports RS256 codes, it will decode using the `.well-known/jwks.json` endpoint to fetch the public key
-
-#### 2.x
-
-- Session storage now returns null (and null is expected by the sdk) if there is no info stored (this change was made since false is a valid value to be stored in session).
-- Guzzle 6.1 required
-
-#### 1.x
-
-- Now, all the SDK is under the namespace `\Auth0\SDK`
-- The exceptions were moved to the namespace `\Auth0\SDK\Exceptions`
-
-### New features
-
-- The Auth0 class, now provides two methods to access the user metadata, `getUserMetadata` and `getAppMetadata`. For more info, check the [API v2 changes](https://auth0.com/docs/apiv2Changes)
-- The Auth0 class, now provides a way to update the UserMetadata with the method `updateUserMetadata`. Internally, it uses the [update user endpoint](https://auth0.com/docs/apiv2#!/users/patch_users_by_id), check the method documentation for more info.
-- The new service `\Auth0\SDK\API\ApiUsers` provides an easy way to consume the API v2 Users endpoints.
-- A simple API client (`\Auth0\SDK\API\ApiClient`) is also available to use.
-- A JWT generator and decoder is also available (`\Auth0\SDK\Auth0JWT`)
-- Now provides an interface for the [Authentication API](https://auth0.com/docs/auth-api).
-
->***Note:*** API V2 restrict the access to the endpoints via scopes. By default, the user token has granted certain scopes that let update the user metadata but not the root attributes nor app_metadata. To update this information and access another endpoints, you need an special token with this scopes granted. For more information about scopes, check [the API v2 docs](https://auth0.com/docs/apiv2Changes#6).
+At the moment the best way to see what endpoints are covered is to read through the `\Auth0\SDK\API\Management` class, [available here](https://github.com/auth0/auth0-PHP/blob/master/src/API/Management.php).
 
 ## Examples
 
-Check the [basic-oauth](https://github.com/auth0/auth0-PHP/tree/master/examples/basic-oauth) example to see a quick demo on how the sdk works.
-You just need to create a `.env` file with the following information:
+### Organizations (Closed Beta)
 
+Organizations is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
+
+Using Organizations, you can:
+
+- Represent teams, business customers, partner companies, or any logical grouping of users that should have different ways of accessing your applications, as organizations.
+- Manage their membership in a variety of ways, including user invitation.
+- Configure branded, federated login flows for each organization.
+- Implement role-based access control, such that users can have different roles when authenticating in the context of different organizations.
+- Build administration capabilities into your products, using Organizations APIs, so that those businesses can manage their own organizations.
+
+Note that Organizations is currently only available to customers on our Enterprise and Startup subscription plans.
+
+#### Logging in with an Organization
+
+Configure the Authentication API client with your Organization ID:
+
+```php
+use Auth0\SDK\Auth0;
+
+$auth0 = new Auth0([
+  // Found in your Auth0 dashboard, under Organization settings:
+  'organization' => '{YOUR_ORGANIZATION_ID}',
+
+  // Found in your Auth0 dashboard, under Application settings:
+  'domain'       => '{YOUR_TENANT}.auth0.com',
+  'client_id'    => '{YOUR_APPLICATION_CLIENT_ID}',
+  'redirect_uri' => 'https://{YOUR_APPLICATION_CALLBACK_URL}',
+]);
 ```
-AUTH0_CLIENT_SECRET=YOUR_APP_SECRET
-AUTH0_CLIENT_ID=YOU_APP_CLIENT
-AUTH0_DOMAIN=YOUR_DOMAIN.auth0.com
-AUTH0_CALLBACK_URL=http://localhost:3000/index.php
-AUTH0_APPTOKEN=A_VALID_APPTOKEN_WITH_CREATE_USER_SCOPE
+
+Redirect to the Universal Login page using the configured organization:
+
+```php
+$auth0->login();
 ```
 
-You will get your app client and secret from your Auth0 app you had created.
-The auth0 domain, is the one you pick when you created your auth0 account.
-You need to set this callback url in your app allowed callbacks.
-The app token is used in the 'create user' page and needs `create:users` scope. To create one, you need to use the token generator in the [API V2 documentation page](https://auth0.com/docs/apiv2)
+#### Accepting user invitations
 
-To run the example, you need composer (the PHP package manager) installed (you can find more info about composer [here](https://getcomposer.org/doc/00-intro.md)) and run the following commands on the same folder than the code.
+Auth0 Organizations allow users to be invited using emailed links, which will direct a user back to your application. The URL the user will arrive at is based on your configured `Application Login URI`, which you can change from your Application's settings inside the Auth0 dashboard.
 
+When the user arrives at your application using an invite link, you can expect three query parameters to be provided: `invitation`, `organization`, and `organization_name`. These will always be delivered using a GET request.
+
+A helper function is provided to handle extracting these query parameters and automatically redirecting to the Universal Login page:
+
+```php
+// Expects the Auth0 SDK to be configured first, as demonstrated above.
+$auth0->handleInvitation();
 ```
-$ composer install
-$ php -S localhost:3000
+
+If you prefer to have more control over this process, a separate helper function is provided for extracting the query parameters, `getInvitationParameters()`, which you can use to initiate the Universal Login redirect yourself:
+
+```php
+// Expects the Auth0 SDK to be configured first, as demonstrated above.
+
+// Returns an object containing the invitation query parameters, or null if they aren't present
+if ($invite = $auth0->getInvitationParameters()) {
+  // Does the invite organization match your intended organization?
+  if ($invite->organization !== '{YOUR_ORGANIZATION_ID}') {
+    throw new Exception("This invitation isn't intended for this service. Please have your administrator check the service configuration and request a new invitation.");
+  }
+
+  // Redirect to Universal Login using the emailed invitation
+  $auth0->login(null, null, [
+    'invitation'   => $invite->invitation,
+    'organization' => $invite->organization
+  ]);
+}
 ```
 
-## Migration guide
+After successful authentication via the Universal Login Page, the user will arrive back at your application using your configured `redirect_uri`, their token will be automatically validated, and the user will have an authenticated session. Use `getUser()` to retrieve details about the authenticated user.
 
-### from 1.x
+## Documentation
 
-1. If you use Guzzle (or some other dependency does), you will need to update it to work with Guzzle 6.1.
+- [Documentation](https://auth0.com/docs/libraries/auth0-php)
+  - [Installation](https://auth0.com/docs/libraries/auth0-php#installation)
+  - [Getting Started](https://auth0.com/docs/libraries/auth0-php#getting-started)
+  - [Basic Usage](https://auth0.com/docs/libraries/auth0-php/auth0-php-basic-use)
+  - [Authentication API](https://auth0.com/docs/libraries/auth0-php/using-the-authentication-api-with-auth0-php)
+  - [Management API](https://auth0.com/docs/libraries/auth0-php/using-the-management-api-with-auth0-php)
+  - [Troubleshooting](https://auth0.com/docs/libraries/auth0-php/troubleshoot-auth0-php-library)
+- Quickstarts
+  - [Basic authentication example](https://auth0.com/docs/quickstart/webapp/php/) ([GitHub repo](https://github.com/auth0-samples/auth0-php-web-app/tree/master/00-Starter-Seed))
+  - [Authenticated backend API example](https://auth0.com/docs/quickstart/backend/php/) ([GitHub repo](https://github.com/auth0-samples/auth0-php-api-samples/tree/master/01-Authenticate))
 
-### from 0.6.6
+## Contributing
 
-1. First is important to read the [API v2 changes document](https://auth0.com/docs/apiv2Changes) to catch up the latest changes to the API.
-2. Update your composer.json file.
- - change the version "auth0/auth0-php": "~1.0"
- - add the new dependency "firebase/php-jwt" : "dev-master"
-3. Now the SDK is PSR-4 compliant so you will need to change the namespaces (sorry **:(** ) to `\Auth0\SDK`
-4. The method `getUserInfo` is deprecated and candidate to be removed on the next release. User `getUser` instead. `getUser` returns an User object compliant with API v2 which is a `stdClass` (check the schema [here](https://auth0.com/docs/apiv2#!/users/get_users_by_id))
+We appreciate your feedback and contributions to the project! Before you get started, please review the following:
 
-## Develop
+- [Auth0's general contribution guidelines](https://github.com/auth0/open-source-template/blob/master/GENERAL-CONTRIBUTING.md)
+- [Auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md)
+- [The Auth0 PHP SDK contribution guide](CONTRIBUTING.md)
 
-### _.env_ format
+## Support + Feedback
 
-- GLOBAL_CLIENT_ID
-- GLOBAL_CLIENT_SECRET
-- DOMAIN
+- The [Auth0 Community](https://community.auth0.com/) is a valuable resource for asking questions and finding answers, staffed by the Auth0 team and a community of enthusiastic developers
+- For code-level support (such as feature requests and bug reports) we encourage you to [open issues](https://github.com/auth0/auth0-PHP/issues) here on our repo
+- For customers on [paid plans](https://auth0.com/pricing/), our [support center](https://support.auth0.com/) is available for opening tickets with our knowledgeable support specialists
 
-### Install dependencies
-This SDK uses [Composer](http://getcomposer.org/doc/01-basic-usage.md) to manage its dependencies.
+Further details about our support solutions are [available on our website.](https://auth0.com/docs/support)
 
-## Configure example
+## Vulnerability Reporting
 
-1. Install dependencies
-2. Start your web server on `examples/{example-name}` folder.
-3. Create an OpenID Connect Application on Auth0.
-4. Configure the callback url to point `{your-base-url}\callback.php`.
-5. Open `examples/{example-name}/config.php` and replace all placeholder parameters.
-6. On your browser, open the Auth0 example project. Make sure `index.php` is being loaded.
+Please do not report security vulnerabilities on the public GitHub issue tracker. The [Responsible Disclosure Program](https://auth0.com/whitehat) details the procedure for disclosing security issues.
 
 ## What is Auth0?
 
 Auth0 helps you to:
 
-* Add authentication with [multiple authentication sources](https://docs.auth0.com/identityproviders), either social like **Google, Facebook, Microsoft Account, LinkedIn, GitHub, Twitter, Box, Salesforce, amont others**, or enterprise identity systems like **Windows Azure AD, Google Apps, Active Directory, ADFS or any SAML Identity Provider**.
-* Add authentication through more traditional **[username/password databases](https://docs.auth0.com/mysql-connection-tutorial)**.
-* Add support for **[linking different user accounts](https://docs.auth0.com/link-accounts)** with the same user.
-* Support for generating signed [Json Web Tokens](https://docs.auth0.com/jwt) to call your APIs and **flow the user identity** securely.
-* Analytics of how, when and where users are logging in.
-* Pull data from other sources and add it to the user profile, through [JavaScript rules](https://docs.auth0.com/rules).
+- Add authentication with [multiple authentication sources](https://docs.auth0.com/identityproviders), either social like Google, Facebook, Microsoft, LinkedIn, GitHub, Twitter, Box, Salesforce (amongst others), or enterprise identity systems like Windows Azure AD, Google Apps, Active Directory, ADFS or any SAML Identity Provider.
+- Add authentication through more traditional **[username/password databases](https://docs.auth0.com/mysql-connection-tutorial)**.
+- Add support for [passwordless](https://auth0.com/passwordless) and [multi-factor authentication](https://auth0.com/docs/mfa).
+- Add support for [linking different user accounts](https://docs.auth0.com/link-accounts) with the same user.
+- Analytics of how, when and where users are logging in.
+- Pull data from other sources and add it to the user profile, through [JavaScript rules](https://docs.auth0.com/rules).
 
-## Create a free account in Auth0
-
-1. Go to [Auth0](https://auth0.com) and click Sign Up.
-2. Use Google, GitHub or Microsoft Account to login.
-
-## Issue Reporting
-
-If you have found a bug or if you have a feature request, please report them at this repository issues section. Please do not report security vulnerabilities on the public GitHub issue tracker. The [Responsible Disclosure Program](https://auth0.com/whitehat) details the procedure for disclosing security issues.
-
-## Author
-
-[Auth0](auth0.com)
+[Why Auth0?](https://auth0.com/why-auth0)
 
 ## License
 
-This project is licensed under the MIT license. See the [LICENSE](LICENSE.txt) file for more info.
+The Auth0 PHP SDK is open source software licensed under [the MIT license](https://opensource.org/licenses/MIT). See the [LICENSE](LICENSE.txt) file for more info.
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2Fauth0-PHP.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2Fauth0-PHP?ref=badge_large)

@@ -1,33 +1,61 @@
 <?php
 namespace Auth0\Tests\API;
 
-use Auth0\SDK\API\Helpers\TokenGenerator;
+use Auth0\SDK\API\Authentication;
+use Auth0\Tests\Traits\ErrorHelpers;
 use josegonzalez\Dotenv\Loader;
+use PHPUnit\Framework\TestCase;
 
-class ApiTests extends \PHPUnit_Framework_TestCase {
-  protected function getEnv() {
-    try {
-      $loader = new Loader('.env');
-      $loader->parse()
-             ->putenv(true);
+/**
+ * Class ApiTests.
+ * Extend to test API endpoints with a live or mock API.
+ *
+ * @package Auth0\Tests\API
+ */
+class ApiTests extends TestCase
+{
+    use ErrorHelpers;
+
+    /**
+     * Environment variables.
+     *
+     * @var array
+     */
+    protected static $env = [];
+
+    /**
+     * Get all test suite environment variables.
+     *
+     * @return array
+     *
+     * @throws \Auth0\SDK\Exception\ApiException
+     */
+    protected static function getEnv()
+    {
+        if (self::$env) {
+            return self::$env;
+        }
+
+        $env_path = '.env';
+        if (file_exists($env_path)) {
+            $loader = new Loader($env_path);
+            $loader->parse()->putenv(true);
+        }
+
+        $env = [
+            'DOMAIN' => getenv('DOMAIN'),
+            'APP_CLIENT_ID' => getenv('APP_CLIENT_ID'),
+            'APP_CLIENT_SECRET' => getenv('APP_CLIENT_SECRET'),
+            'API_TOKEN' => getenv('API_TOKEN'),
+        ];
+
+        if (! $env['API_TOKEN'] && $env['APP_CLIENT_SECRET']) {
+            $auth_api         = new Authentication( $env['DOMAIN'], $env['APP_CLIENT_ID'], $env['APP_CLIENT_SECRET'] );
+            $response         = $auth_api->client_credentials( [ 'audience' => 'https://'.$env['DOMAIN'].'/api/v2/' ] );
+            $env['API_TOKEN'] = $response['access_token'];
+        }
+
+        self::$env = $env;
+        return self::$env;
     }
-    catch (\InvalidArgumentException $e) {
-      //ignore
-    }
-
-    return [
-      "GLOBAL_CLIENT_ID" => getenv('GLOBAL_CLIENT_ID'),
-      "GLOBAL_CLIENT_SECRET" => getenv('GLOBAL_CLIENT_SECRET'),
-      "APP_CLIENT_ID" => getenv('APP_CLIENT_ID'),
-      "APP_CLIENT_SECRET" => getenv('APP_CLIENT_SECRET'),
-      "NIC_ID" => getenv('NIC_ID'),
-      "NIC_SECRET" => getenv('NIC_SECRET'),
-      "DOMAIN" => getenv('DOMAIN'),
-    ];
-  }
-
-  protected function getToken($env, $scopes) {
-    $generator = new TokenGenerator([ 'client_id' => $env['GLOBAL_CLIENT_ID'], 'client_secret' => $env['GLOBAL_CLIENT_SECRET' ] ]);
-    return $generator->generate($scopes);
-  }
 }

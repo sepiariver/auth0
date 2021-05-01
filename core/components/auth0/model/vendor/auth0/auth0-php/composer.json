@@ -1,7 +1,8 @@
 {
   "name": "auth0/auth0-php",
   "description": "Auth0 PHP SDK.",
-  "type": "library",
+  "homepage": "https://github.com/auth0/auth0-PHP",
+  "license": "MIT",
   "authors": [
     {
       "name": "Auth0",
@@ -10,14 +11,23 @@
     }
   ],
   "require": {
-    "php": "^5.5 || ^7.0",
-    "guzzlehttp/guzzle": "~6.0",
+    "php": "^7.3 | ^8.0",
     "ext-json": "*",
-    "firebase/php-jwt" : "^4.0"
+    "ext-openssl": "*",
+    "auth0/php-jwt": "3.3.4",
+    "guzzlehttp/guzzle": "^7.2",
+    "psr/simple-cache": "^1.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^4.8 || ^5.7",
-    "josegonzalez/dotenv": "^2.0"
+    "phpunit/phpunit": "^9.3",
+    "josegonzalez/dotenv": "^3.2",
+    "squizlabs/php_codesniffer": "^3.2",
+    "phpcompatibility/php-compatibility": "^8.1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7",
+    "cache/adapter-common": "^1.2",
+    "cache/hierarchical-cache": "^1.1",
+    "cache/array-adapter": "^1.1",
+    "phpstan/phpstan": "^0.12.64"
   },
   "autoload": {
     "psr-4": {
@@ -30,8 +40,23 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/phpunit",
-    "test-ci": "vendor/bin/phpunit --coverage-text --coverage-clover=build/coverage.xml"
-  },
-  "license": "MIT"
+    "test": "SHELL_INTERACTIVE=1 \"vendor/bin/phpunit\" --coverage-text",
+    "test-ci": "\"vendor/bin/phpunit\" --stop-on-failure --coverage-clover=build/coverage.xml",
+    "test-unit": "SHELL_INTERACTIVE=1 \"vendor/bin/phpunit\" --coverage-text --testsuite=unit",
+    "test-unit-ci": "SHELL_INTERACTIVE=1 \"vendor/bin/phpunit\" --stop-on-failure --coverage-clover=build/coverage.xml --testsuite=unit",
+    "test-integration": "SHELL_INTERACTIVE=1 \"vendor/bin/phpunit\" --coverage-text --testsuite=integration",
+    "test-integration-ci": "\"vendor/bin/phpunit\" --stop-on-failure --coverage-clover=build/coverage.xml --testsuite=integration",
+    "static-analysis": "@php ./vendor/bin/phpstan analyze",
+    "compat": "@php ./vendor/bin/phpcs --standard=.phpcs-compat.xml.dist",
+    "format": "@php ./vendor/bin/phpcbf",
+    "lint": "@php ./vendor/bin/phpcs",
+    "sniffs": "\"vendor/bin/phpcs\" -e",
+    "config-phpcs": "Dealerdirect\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\Plugin::run",
+    "pre-commit": [
+      "@static-analysis",
+      "@test",
+      "@format",
+      "@compat"
+    ]
+  }
 }
