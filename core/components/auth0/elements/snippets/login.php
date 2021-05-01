@@ -2,18 +2,24 @@
 /**
  * auth0.login
  *
- * Login an Auth0 user
+ * Login an Auth0 user.
+ * Attempts to get user info from Auth0. Redirects to Auth0 login or shows failure content.
+ * With Auth0 user info, attempts to establish local session and optionally creates modx user profile.
  *
  * OPTIONS:
  * &loginResourceId -       (int) ID of Resource to redirect user on successful login. Default 0 (no redirect)
  * &loginContexts -         (string) CSV of context keys, to login user (in addition to current context). Default ''
- * &requireVerifiedEmail -  (bool) Require verified_email from ID provider. Default true
+ * &logoutParam -           (string) Key of GET param to trigger logout. Default 'logout'
+ * &reverify -              (bool) If true, force check user state and existence in modx DB, regardless of local session. Default false
+ * &logoutOnFailedVerification (bool) If true, logout local session and Auth0 if login fails. Else show error/failure content. Default false
+ * &additionalParams -      (string) JSON string to pass to Auth0's login method as additionalParameters. Default ''
+ * TPLs:
+ * &failedLoginTpl -        (string) Chunk TPL to render when login fails. Default '@INLINE ...'
+ * &cannotVerifyTpl -       (string) Chunk TPL to render when verification fails. Default '@INLINE ...'
  * &unverifiedEmailTpl -    (string) Chunk TPL to render when unverified email. Default '@INLINE ...'
  * &userNotFoundTpl -       (string) Chunk TPL to render when no MODX user found. Default '@INLINE ...'
  * &alreadyLoggedInTpl -    (string) Chunk TPL to render when MODX user already logged-in. Default '@INLINE ...'
  * &successfulLoginTpl -    (string) Chunk TPL to render when Auth0 login successful. Default '@INLINE ...'
- * &logoutParam -           (string) Key of GET param to trigger logout. Default 'logout'
- * &redirect_uri -          (string) Auth0 redirect URI. Default {current Resource's URI}
  * &debug -                 (bool) Enable debug output. Default false
  *
  * @var modX $modx
@@ -47,11 +53,13 @@ if (!($auth0 instanceof Auth0) || !$auth0->init()) {
     return;
 }
 
+// OPTIONS
 $loginResourceId = abs(intval($modx->getOption('loginResourceId', $scriptProperties, 0)));
 $loginContexts = $modx->getOption('loginContexts', $scriptProperties, '');
 $logoutParam = $modx->getOption('logoutParam', $scriptProperties, 'logout');
 $reVerify = $modx->getOption('reverify', $scriptProperties, false);
 $logoutOnFailedVerification = $modx->getOption('logoutOnFailedVerification', $scriptProperties, false);
+$additionalParams = $modx->fromJSON($modx->getOption('additionalParams', $scriptProperties, ''));
 
 $alreadyLoggedInTpl = $modx->getOption('alreadyLoggedInTpl', $scriptProperties, '@INLINE Already logged-in.');
 $failedLoginTpl = $modx->getOption('failedLoginTpl', $scriptProperties, '@INLINE Login failed. Please contact the system administrator.');
@@ -84,7 +92,10 @@ if ($modx->user->hasSessionContext($modx->context->key) && !$reVerify) {
     }
 }
 
-$loggedIn = $auth0->login($loginContexts, true, $reVerify);
+if (!is_array($additionalParams)) {
+    $additionalParams = [];
+}
+$loggedIn = $auth0->login($loginContexts, true, $reVerify, $additionalParams);
 if ($loggedIn === true) {
     if ($loginResourceUrl) {
         $modx->sendRedirect($loginResourceUrl);

@@ -99,16 +99,19 @@ The following boolean flags enable or disable synchronization features. **Be car
 
 This Snippet has the following options:
 
-- &loginResourceId -       (int) ID of Resource to redirect user on successful login. Default 0 (no redirect)
-- &loginContexts -         (string) CSV of context keys, to login user (in addition to current context). Default ''
-- &requireVerifiedEmail -  (bool) Require verified_email from ID provider. Default true
-- &unverifiedEmailTpl -    (string) Chunk TPL to render when unverified email. Default '@INLINE ...'
-- &userNotFoundTpl -       (string) Chunk TPL to render when no MODX user found. Default '@INLINE ...'
-- &alreadyLoggedInTpl -    (string) Chunk TPL to render when MODX user already logged-in. Default '@INLINE ...'
-- &successfulLoginTpl -    (string) Chunk TPL to render when Auth0 login successful. Default '@INLINE ...'
-- &logoutParam -           (string) Key of GET param to trigger logout. Default 'logout'
-- &redirect_uri -          (string) Auth0 redirect URI. Default {current Resource's URI}
-- &debug -                 (bool) Enable debug output. Default false
+&loginResourceId -       (int) ID of Resource to redirect user on successful login. Default 0 (nodirect)
+&loginContexts -         (string) CSV of context keys, to login user (in addition to currentntext). Default ''
+&logoutParam -           (string) Key of GET param to trigger logout. Default 'logout'
+&reverify -              (bool) If true, force check user state and existence in modx DB,gardless of local session. Default false
+&logoutOnFailedVerification - (bool) If true, logout local session and Auth0 if login fails. Elseow error/failure content. Default false
+&additionalParams -      (string) JSON string to pass to Auth0's login method asditionalParameters. Default ''
+&failedLoginTpl -        (string) Chunk TPL to render when login fails. Default '@INLINE ...'
+&cannotVerifyTpl -       (string) Chunk TPL to render when verification fails. Default '@INLINE ...'
+&unverifiedEmailTpl -    (string) Chunk TPL to render when unverified email. Default '@INLINE ...'
+&userNotFoundTpl -       (string) Chunk TPL to render when no MODX user found. Default '@INLINE ...'
+&alreadyLoggedInTpl -    (string) Chunk TPL to render when MODX user already logged-in. DefaultINLINE ...'
+&successfulLoginTpl -    (string) Chunk TPL to render when Auth0 login successful. Default '@INLINE.'
+&debug -                 (bool) Enable debug output. Default false
 
 ### Snippet: auth0.logout
 

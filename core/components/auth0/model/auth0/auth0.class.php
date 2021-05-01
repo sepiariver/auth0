@@ -134,7 +134,7 @@ class Auth0
      * @param bool $reVerify
      * @return array|false
      */
-    public function getUser($forceLogin = false, $reVerify = false)
+    public function getUser($forceLogin = false, $reVerify = false, array $additionalParams = [])
     {
         if ($this->userInfo) return $this->userInfo;
 
@@ -142,7 +142,7 @@ class Auth0
             $userInfo = $this->api->getUser();
             if (empty($userInfo)) {
                 if ($forceLogin) {
-                    $this->api->login();
+                    $this->api->login(null, null, $additionalParams);
                     return false;
                 }
 
@@ -660,12 +660,12 @@ class Auth0
      * @param bool $reVerify
      * @return bool $response
      */
-    public function login($loginContexts = [], $forceLogin = true, $reVerify = false)
+    public function login($loginContexts = [], $forceLogin = true, $reVerify = false, array $additionalParams = [])
     {
         if (!is_array($loginContexts)) {
             $loginContexts = $this->explodeAndClean($loginContexts);
         }
-        $this->getUser($forceLogin, $reVerify);
+        $this->getUser($forceLogin, $reVerify, $additionalParams);
 
         if ($this->userState !== self::STATE_VERIFIED) {
             return false;

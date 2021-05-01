@@ -1,8 +1,10 @@
-Auth0 1.1.0-rc1
+Auth0 1.1.1-rc1
 ================
 Logout Snippet.
 Add user profile to loggedIn snippet.
 Option to check local session only to save round trip.
+Option to pass additional parameters to Auth0 login.
+Make docs actually reflect login Snippet properties.
 
 Auth0 1.0.0-beta1
 ================
