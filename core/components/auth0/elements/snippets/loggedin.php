@@ -6,6 +6,7 @@
  *
  * OPTIONS:
  * &forceLogin -    (bool) Enable/disable forwarding to Auth0 for login if anonymous. &anonymousTpl will not be displayed if this is true. Default true
+ * &remoteAuth -    (bool) Call Auth0 for userInfo. If false, only checks local MODX session. Default true
  * &loggedInTpl -   (string) Chunk TPL to render when logged in. Default '@INLINE ...'
  * &auth0UserTpl -  (string) Chunk TPL to render when logged into Auth0 but not MODX. Default '@INLINE ...'
  * &anonymousTpl -  (string) Chunk TPL to render when not logged in. Default '@INLINE ...'
@@ -52,6 +53,11 @@ if (!($auth0 instanceof Auth0) || !$auth0->init()) {
 
     // MODX session is the record of truth for logged-in state
     if ($modx->user && $modx->user->hasSessionContext($modx->context->key)) {
+        // Add modx user profile
+        $profile = $modx->user->getOne('Profile');
+        if ($profile) {
+            $props = array_merge($props, $profile->toArray());
+        }
         return $modx->getChunk($loggedInTpl, $props);
     } else {
         $modx->sendUnauthorizedPage();
@@ -76,6 +82,11 @@ if ($debug) {
 
 // Check for session
 if ($modx->user->hasSessionContext($modx->context->key)) {
+    // Add modx user profile, it will overwrite $userInfo with same keys
+    $profile = $modx->user->getOne('Profile');
+    if ($profile) {
+        $props = array_merge($props, $profile->toArray());
+    }
     // Has session
     if ($debug) {
         return $auth0->debug($props);

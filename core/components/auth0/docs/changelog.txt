@@ -1,6 +1,8 @@
-Auth0 1.1.0-pl1
+Auth0 1.1.0-rc1
 ================
 Logout Snippet.
+Add user profile to loggedIn snippet.
+Option to check local session only to save round trip.
 
 Auth0 1.0.0-beta1
 ================
