@@ -1,4 +1,4 @@
-Auth0 1.2.0-beta1
+Auth0 1.2.1-beta1
 ================
 Update Auth0 SDK
 

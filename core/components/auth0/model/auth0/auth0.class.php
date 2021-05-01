@@ -234,7 +234,7 @@ class Auth0
         $userId = htmlspecialchars_decode($this->userInfo['sub']);
         if (!$userId) return;
         try {
-            $data = $this->managementApi->users->get($userId);
+            $data = $this->managementApi->users()->get($userId);
         } catch (Exception $e) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
         }
@@ -344,7 +344,7 @@ class Auth0
             $pullSettings = (int)$this->getSystemSetting('pull_settings');
             $syncUserGroups = (int)$this->getSystemSetting('sync_user_groups');
 
-            $data = $this->managementApi->users->get($this->userInfo['sub']);
+            $data = $this->managementApi->users()->get($this->userInfo['sub']);
 
             $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
 
@@ -407,7 +407,7 @@ class Auth0
             $pushSettings = (int)$this->getSystemSetting('push_settings');
             $syncUserGroups = (int)$this->getSystemSetting('sync_user_groups');
 
-            $data = $this->managementApi->users->get($id);
+            $data = $this->managementApi->users()->get($id);
 
             $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
 
@@ -423,7 +423,7 @@ class Auth0
                 $appMeta = $this->pushUserGroups($appMeta, $id, $user);
             }
 
-            $this->managementApi->users->update($id, ['app_metadata' => $appMeta]);
+            $this->managementApi->users()->update($id, ['app_metadata' => $appMeta]);
         } catch (Exception $e) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, '[Auth0] Failed to push user data with error: ' . $e->getMessage());
         }
@@ -509,7 +509,7 @@ class Auth0
 
         if (!$profile) return $appMeta;
         try {
-            $data = $this->managementApi->users->get($id);
+            $data = $this->managementApi->users()->get($id);
         } catch (Exception $e) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());
         }
@@ -561,7 +561,7 @@ class Auth0
         if (!is_array($allowed)) return $appMeta;
 
         try {
-            $data = $this->managementApi->users->get($id);
+            $data = $this->managementApi->users()->get($id);
             $appMeta = isset($data['app_metadata']) ? $data['app_metadata'] : [];
             $appMeta['user_settings'] = is_array($appMeta['user_settings']) ? $appMeta['user_settings'] : [];
 
