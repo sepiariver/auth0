@@ -34,6 +34,7 @@
  **/
 
 $forceLogin = $modx->getOption('forceLogin', $scriptProperties, true);
+$remoteAuth = $modx->getOption('remoteAuth', $scriptProperties, true);
 $loggedInTpl = $modx->getOption('loggedInTpl', $scriptProperties, '@INLINE You\'re logged in.');
 $auth0UserTpl = $modx->getOption('auth0UserTpl', $scriptProperties, '@INLINE Your Auth0 user isn\'t valid here. Try logging in again.');
 $anonymousTpl = $modx->getOption('anonymousTpl', $scriptProperties, '@INLINE Login required.');
@@ -58,10 +59,12 @@ if (!($auth0 instanceof Auth0) || !$auth0->init()) {
     }
 }
 
-// Call for userinfo
-$userInfo = $auth0->getUser($forceLogin);
-if ($userInfo !== false) {
-    $props = array_merge($props, $userInfo);
+// Call Auth0 for userinfo if configured
+if ($remoteAuth) {
+    $userInfo = $auth0->getUser($forceLogin);
+    if (!empty($userInfo) && is_array($userInfo)) {
+        $props = array_merge($props, $userInfo);
+    }
 }
 
 // Debug info
@@ -73,23 +76,35 @@ if ($debug) {
 
 // Check for session
 if ($modx->user->hasSessionContext($modx->context->key)) {
+    // Has session
     if ($debug) {
         return $auth0->debug($props);
     }
     // MODX session is the record of truth for logged-in state
+    // Without remoteAuth, we lack $userInfo in $props though
     return $auth0->getChunk($loggedInTpl, $props);
 } else {
-    if ($userInfo !== false) {
+    // No session
+    if (!$remoteAuth) {
+        // We're not configured to check remotely so local session has final say
         if ($debug) {
             return $auth0->debug($props);
         }
-        // User logged-in to Auth0 but not MODX;
-        return $auth0->getChunk($auth0UserTpl, $props);
-    } else {
-        if ($debug) {
-            return $auth0->debug($props);
-        }
-        // User not logged-in to Auth0
+        // We don't know if user is logged-in to Auth0
         return $auth0->getChunk($anonymousTpl, $props);
+    } else {
+        if (!empty($userInfo) && is_array($userInfo)) {
+            if ($debug) {
+                return $auth0->debug($props);
+            }
+            // We checked and the User is logged-in to Auth0 but not MODX
+            return $auth0->getChunk($auth0UserTpl, $props);
+        } else {
+            if ($debug) {
+                return $auth0->debug($props);
+            }
+            // We checked and the User is not logged-in to Auth0
+            return $auth0->getChunk($anonymousTpl, $props);
+        }
     }
 }
