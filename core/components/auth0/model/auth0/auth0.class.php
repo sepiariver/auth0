@@ -96,8 +96,11 @@ class Auth0
     public function init()
     {
         try {
+            $this->domain = $this->getSystemSetting('domain');
+
+            // Configure Auth0 API client
             $config = [
-                'domain' => $this->getSystemSetting('domain', ''),
+                'domain' => $this->getSystemSetting('custom_domain', $this->domain),
                 'client_id' => $this->getSystemSetting('client_id', ''),
                 'client_secret' => $this->getSystemSetting('client_secret', ''),
                 'redirect_uri' => $this->getSystemSetting('redirect_uri', ''),
@@ -107,18 +110,15 @@ class Auth0
                 'persist_access_token' => $this->getSystemSetting('persist_access_token', true),
                 'persist_refresh_token' => $this->getSystemSetting('persist_refresh_token', false),
             ];
-
             $this->api = new Auth0\SDK\Auth0($config);
 
-            $this->domain = $this->getSystemSetting('custom_domain', $config['domain']);
-
+            // Configure Management API client
             $this->authApi = new Auth0\SDK\API\Authentication($this->domain, $config['client_id'], $config['client_secret']);
-
             $credentials = $this->authApi->client_credentials([
-                'audience' => 'https://' . $config['domain'] . '/api/v2/',
+                'audience' => 'https://' . $this->domain . '/api/v2/',
                 'scope' => 'read:users read:users_app_metadata update:users update:users_app_metadata',
             ]);
-            $this->managementApi = new Auth0\SDK\API\Management($credentials['access_token'], $config['domain']);
+            $this->managementApi = new Auth0\SDK\API\Management($credentials['access_token'], $this->domain);
 
         } catch (Exception $e) {
             $this->modx->log(modX::LOG_LEVEL_ERROR, $e->getMessage());

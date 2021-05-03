@@ -1,4 +1,4 @@
-Auth0 1.3.0-dev1
+Auth0 1.3.1-beta1
 ================
 Support for custom domains
 
