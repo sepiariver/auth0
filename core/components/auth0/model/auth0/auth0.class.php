@@ -53,6 +53,9 @@ class Auth0
     /** @var string string */
     protected $userState = '';
 
+    /** @var string string */
+    public $domain = '';
+
     public function __construct(modX &$modx, array $options = array())
     {
         $this->modx =& $modx;
@@ -107,7 +110,10 @@ class Auth0
 
             $this->api = new Auth0\SDK\Auth0($config);
 
-            $this->authApi = new Auth0\SDK\API\Authentication($config['domain'], $config['client_id'], $config['client_secret']);
+            $this->domain = $this->getSystemSetting('custom_domain', $config['domain']);
+
+            $this->authApi = new Auth0\SDK\API\Authentication($this->domain, $config['client_id'], $config['client_secret']);
+
             $credentials = $this->authApi->client_credentials([
                 'audience' => 'https://' . $config['domain'] . '/api/v2/',
                 'scope' => 'read:users read:users_app_metadata update:users update:users_app_metadata',

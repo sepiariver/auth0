@@ -65,11 +65,13 @@ After installing the Auth0 Extra, add the credentials from your Auth0 Client App
 
 ![system settings](https://sepiariver.com/assets/uploads/images/Screenshot%202018-01-08%2018.33.17.png)
 
-The "audience" setting will be your Auth0 domain `/userinfo`. For example: `https://example.auth0.com/userinfo`
+As of version 1.3.x, "custom_domain" is supported, for example: `sso.example.com`.
 
-The "redirect_uri" setting will be the Resource on which you call the "auth0.login" Snippet, for example: `http://localhost:3000/login.html`
+Note: you still must configure the "domain" setting with your tenant identifier, like `example.us.auth0.com`. This is because Auth0 currently does not route the management API requests to your custom domain. The custom domain is for user-facing interactions.
 
-The "redirect_uri" must be web-accessible, as Auth0 will redirect your Users there. The above is just an example.
+The "audience" setting will be your Auth0 domain `/userinfo`. For example: `https://example.us.auth0.com/userinfo`
+
+The "redirect_uri" setting will be the Resource on which you call the "auth0.login" Snippet, for example: `http://localhost:3000/login.html`. Auth0 will return the Auth response callback there.
 
 Note the setting for "scope" includes `openid profile email address phone`. `openid` and `email` at the very least, are required for MODX to identify your User.
 
