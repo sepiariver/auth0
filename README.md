@@ -69,7 +69,7 @@ As of version 1.3.x, "custom_domain" is supported, for example: `sso.example.com
 
 Note: you still must configure the "domain" setting with your tenant identifier, like `example.us.auth0.com`. This is because Auth0 currently does not route the management API requests to your custom domain. The custom domain is for user-facing interactions.
 
-The "audience" setting will be your Auth0 domain `/userinfo`. For example: `https://example.us.auth0.com/userinfo`
+The "audience" setting will be your Auth0 domain with scheme and path `/userinfo`. For example: `https://example.us.auth0.com/userinfo`
 
 The "redirect_uri" setting will be the Resource on which you call the "auth0.login" Snippet, for example: `http://localhost:3000/login.html`. Auth0 will return the Auth response callback there.
 
@@ -133,6 +133,8 @@ Tests for logged-in state and provides options for what to render in each scenar
 - &auth0UserTpl -  (string) Chunk TPL to render when logged into Auth0 but not MODX. Default '@INLINE ...'
 - &anonymousTpl -  (string) Chunk TPL to render when not logged in. Default '@INLINE ...'
 - &debug -         (bool) Enable debug output. Default false
+
+> IMPORTANT: If remoteAuth is `true`, and the user is logged-in to your Auth0 domain, but _not_ logged-in to MODX, the Snippet will render the &auth0UserTpl chunk. This may be confusing, especially if &forceLogin is `true`. In this condition, the Snippet cannot force a login again, as the user already has a valid session at your Auth0 domain. If you do not want users in this state to be able to view any part of the Resource on which this Snippet is called, you must redirect them in the &auth0UserTpl chunk OR place all your protected content inside the &loggedInTpl chunk, which would not render at all in this case.
 
 ### Snippet: auth0.JWTLogin
 

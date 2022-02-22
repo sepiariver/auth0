@@ -97,10 +97,13 @@ class Auth0
     {
         try {
             $this->domain = $this->getSystemSetting('domain');
-
+            $customDomain = $this->getSystemSetting('custom_domain');
+            if (empty($customDomain)) {
+                $customDomain = $this->domain;
+            }
             // Configure Auth0 API client
             $config = [
-                'domain' => $this->getSystemSetting('custom_domain', $this->domain),
+                'domain' => $customDomain,
                 'client_id' => $this->getSystemSetting('client_id', ''),
                 'client_secret' => $this->getSystemSetting('client_secret', ''),
                 'redirect_uri' => $this->getSystemSetting('redirect_uri', ''),

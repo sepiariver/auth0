@@ -1,3 +1,9 @@
+Auth0 1.3.3-beta1
+================
+Change API field type in System Settings
+Updated readme
+Bugfix for custom domains
+
 Auth0 1.3.1-beta1
 ================
 Support for custom domains
