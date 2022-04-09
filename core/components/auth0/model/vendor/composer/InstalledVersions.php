@@ -20,6 +20,8 @@ use Composer\Semver\VersionParser;
 
 
 
+
+
 class InstalledVersions
 {
 private static $installed = array (
@@ -30,7 +32,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '50254d17fc027f2a81cf14b03fc0f5beb554c5a1',
+    'reference' => 'f0ccc4ca7af591521cfa47fae80c973d714d6bf0',
     'name' => 'sepiariver/auth0',
   ),
   'versions' => 
@@ -73,12 +75,12 @@ private static $installed = array (
     ),
     'guzzlehttp/psr7' => 
     array (
-      'pretty_version' => '1.8.2',
-      'version' => '1.8.2.0',
+      'pretty_version' => '2.2.1',
+      'version' => '2.2.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'dc960a912984efb74d0a90222870c72c87f10c91',
+      'reference' => 'c94a94f120803a18554c1805ef2e539f8285f9a2',
     ),
     'psr/http-client' => 
     array (
@@ -90,6 +92,22 @@ private static $installed = array (
       'reference' => '2dfb5f6c5eff0e91e20e913f8c5452ed95b86621',
     ),
     'psr/http-client-implementation' => 
+    array (
+      'provided' => 
+      array (
+        0 => '1.0',
+      ),
+    ),
+    'psr/http-factory' => 
+    array (
+      'pretty_version' => '1.0.1',
+      'version' => '1.0.1.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
+    ),
+    'psr/http-factory-implementation' => 
     array (
       'provided' => 
       array (
@@ -137,7 +155,7 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '50254d17fc027f2a81cf14b03fc0f5beb554c5a1',
+      'reference' => 'f0ccc4ca7af591521cfa47fae80c973d714d6bf0',
     ),
   ),
 );
@@ -156,7 +174,6 @@ $packages = array();
 foreach (self::getInstalled() as $installed) {
 $packages[] = array_keys($installed['versions']);
 }
-
 
 if (1 === \count($packages)) {
 return $packages[0];
@@ -349,6 +366,7 @@ public static function reload($data)
 self::$installed = $data;
 self::$installedByVendor = array();
 }
+
 
 
 
