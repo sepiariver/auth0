@@ -32,19 +32,19 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => 'f0ccc4ca7af591521cfa47fae80c973d714d6bf0',
+    'reference' => 'aef5e9f8218f3106971b9697746820bad85032a8',
     'name' => 'sepiariver/auth0',
   ),
   'versions' => 
   array (
     'auth0/auth0-php' => 
     array (
-      'pretty_version' => '7.8.0',
-      'version' => '7.8.0.0',
+      'pretty_version' => '7.9.2',
+      'version' => '7.9.2.0',
       'aliases' => 
       array (
       ),
-      'reference' => '05c538b6c56a57d6d214f6a90e2b6a5d00945a51',
+      'reference' => '95cdd4f09122f14d0b0246fe8c51287ece63f98a',
     ),
     'auth0/php-jwt' => 
     array (
@@ -57,30 +57,30 @@ private static $installed = array (
     ),
     'guzzlehttp/guzzle' => 
     array (
-      'pretty_version' => '7.3.0',
-      'version' => '7.3.0.0',
+      'pretty_version' => '7.4.2',
+      'version' => '7.4.2.0',
       'aliases' => 
       array (
       ),
-      'reference' => '7008573787b430c1c1f650e3722d9bba59967628',
+      'reference' => 'ac1ec1cd9b5624694c3a40be801d94137afb12b4',
     ),
     'guzzlehttp/promises' => 
     array (
-      'pretty_version' => '1.4.1',
-      'version' => '1.4.1.0',
+      'pretty_version' => '1.5.1',
+      'version' => '1.5.1.0',
       'aliases' => 
       array (
       ),
-      'reference' => '8e7d04f1f6450fef59366c399cfad4b9383aa30d',
+      'reference' => 'fe752aedc9fd8fcca3fe7ad05d419d32998a06da',
     ),
     'guzzlehttp/psr7' => 
     array (
-      'pretty_version' => '2.2.1',
-      'version' => '2.2.1.0',
+      'pretty_version' => '1.8.5',
+      'version' => '1.8.5.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'c94a94f120803a18554c1805ef2e539f8285f9a2',
+      'reference' => '337e3ad8e5716c15f9657bd214d16cc5e69df268',
     ),
     'psr/http-client' => 
     array (
@@ -92,22 +92,6 @@ private static $installed = array (
       'reference' => '2dfb5f6c5eff0e91e20e913f8c5452ed95b86621',
     ),
     'psr/http-client-implementation' => 
-    array (
-      'provided' => 
-      array (
-        0 => '1.0',
-      ),
-    ),
-    'psr/http-factory' => 
-    array (
-      'pretty_version' => '1.0.1',
-      'version' => '1.0.1.0',
-      'aliases' => 
-      array (
-      ),
-      'reference' => '12ac7fcd07e5b077433f5f2bee95b3a771bf61be',
-    ),
-    'psr/http-factory-implementation' => 
     array (
       'provided' => 
       array (
@@ -155,7 +139,16 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => 'f0ccc4ca7af591521cfa47fae80c973d714d6bf0',
+      'reference' => 'aef5e9f8218f3106971b9697746820bad85032a8',
+    ),
+    'symfony/deprecation-contracts' => 
+    array (
+      'pretty_version' => 'v2.5.1',
+      'version' => '2.5.1.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'e8b495ea28c1d97b5e0c121748d6f9b53d075c66',
     ),
   ),
 );

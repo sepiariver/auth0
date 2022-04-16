@@ -1,4 +1,9 @@
-Auth0 1.3.3-beta1
+
+Auth0 1.3.5-beta1
+================
+Bump auth0 SDK to 7.9 to fix bug, thanks @claytonk
+
+Auth0 1.3.4-beta1
 ================
 Update dependencies
 

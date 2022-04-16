@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [7.9.2](https://github.com/auth0/auth0-PHP/tree/7.9.2) (2021-08-03)
+
+[Full Changelog](https://github.com/auth0/auth0-PHP/compare/7.9.1...7.9.2)
+
+**Fixed**
+
+- Add missing API2 POST /tickets/password-change params [\#523](https://github.com/auth0/auth0-PHP/pull/523) ([evansims](https://github.com/evansims))
+
+## [7.9.1](https://github.com/auth0/auth0-PHP/tree/7.9.1) (2021-07-06)
+
+[Full Changelog](https://github.com/auth0/auth0-PHP/compare/7.9.0...7.9.1)
+
+**Fixed**
+
+- Replace deprated/removed GuzzleHttp\Psr7\build_query [\#500](https://github.com/auth0/auth0-PHP/pull/500) ([bartvanraaij](https://github.com/bartvanraaij))
+
+## [7.9.0](https://github.com/auth0/auth0-PHP/tree/7.9.0) (2021-05-03)
+
+[Full Changelog](https://github.com/auth0/auth0-PHP/compare/7.8.0...7.9.0)
+
+**Changed**
+
+- Reintroduce Guzzle 6 support [\#489](https://github.com/auth0/auth0-PHP/pull/489) ([marko-ilic](https://github.com/marko-ilic))
+- Update Auth0\SDK\Auth0::getState() visibility to public [\#498](https://github.com/auth0/auth0-PHP/pull/498) ([evansims](https://github.com/evansims))
+
 ## [7.8.0](https://github.com/auth0/auth0-PHP/tree/7.8.0) (2021-03-19)
 
 [Full Changelog](https://github.com/auth0/auth0-PHP/compare/7.7.0...7.8.0)

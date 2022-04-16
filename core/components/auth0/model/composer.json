@@ -2,7 +2,7 @@
     "name": "sepiariver/auth0",
     "description": "Auth0 integration for MODX CMS.",
     "require": {
-        "auth0/auth0-php": "^7.8"
+        "auth0/auth0-php": "^7.9"
     },
     "license": "GPLv2",
     "authors": [{
