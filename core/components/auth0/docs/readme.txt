@@ -2,6 +2,8 @@
 
 Auth0 integration for MODX CMS.
 
+Note: the 1.x branch will continue to get critical security updates. For access to new features in the 2.x branch (currently under development) please consider sponsoring this project.
+
 ## What does it do?
 
 - Log in to MODX using any/all of the Identify Providers (IdPs) supported by Auth0, such as Google, Facebook, Twitter, Github, Microsoft, Dropbox, and [dozens of others](https://auth0.com/docs/identityproviders), including enterprise services.
